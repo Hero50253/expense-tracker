@@ -12,6 +12,11 @@ const AppReducer = (state, action) => {
           ...state,
           transactions: [action.payload, ...state.transactions],
         };
+        case 'RESET_TRANSACTIONS':
+  return {
+    ...state,
+    transactions: []
+  }
       default:
         return state;
     }

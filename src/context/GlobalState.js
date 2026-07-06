@@ -33,7 +33,11 @@ export const GlobalProvider = ({ children }) => {
       payload: transaction
     });
   }
-
+  function resetTransactions() {
+    dispatch({
+      type: 'RESET_TRANSACTIONS'
+    });
+  }
   return (
     <GlobalContext.Provider value={{
       transactions: state.transactions,
