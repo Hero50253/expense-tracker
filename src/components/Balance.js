@@ -1,18 +1,25 @@
-import React, { useContext } from 'react';
-import { GlobalContext } from '../context/GlobalState';
+import { useContext } from "react";
+import { GlobalContext } from "../context/GlobalState";
+import StatCard from "./ui/StatCard";
 
-const Balance = () => {
-  const { transactions } = useContext(GlobalContext);
+function Balance() {
 
-  const amounts = transactions.map(transaction => transaction.amount);
-  const total = amounts.reduce((acc, item) => acc + item, 0).toFixed(2);
+    const { transactions } = useContext(GlobalContext);
 
-  return (
-    <>
-      <h4>Your Balance</h4>
-      <h1>₹{total}</h1>
-    </>
-  );
-};
+    const amounts = transactions.map(item => item.amount);
+
+    const total = amounts.reduce((a,b)=>a+b,0).toFixed(2);
+
+    return (
+
+        <StatCard
+            title="Current Balance"
+            value={`₹${total}`}
+            icon="💰"
+        />
+
+    );
+
+}
 
 export default Balance;

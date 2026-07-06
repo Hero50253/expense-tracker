@@ -1,0 +1,46 @@
+.stat-card{
+    background:var(--bg-secondary);
+    border:1px solid var(--border);
+    border-radius:var(--radius-md);
+    padding:24px;
+    transition:var(--transition);
+    box-shadow:var(--shadow-sm);
+}
+
+.stat-card:hover{
+    transform:translateY(-6px);
+    box-shadow:var(--shadow-lg);
+}
+
+.stat-header{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:15px;
+}
+
+.stat-title{
+    color:var(--text-secondary);
+    font-size:.95rem;
+}
+
+.stat-icon{
+    font-size:22px;
+}
+
+.stat-value{
+    font-size:2rem;
+    font-weight:700;
+}
+
+.primary{
+    color:var(--primary);
+}
+
+.green{
+    color:var(--success);
+}
+
+.red{
+    color:var(--danger);
+}
