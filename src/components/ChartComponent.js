@@ -1,9 +1,9 @@
 // src/components/ChartComponent.js
-import React, { useContext } from "react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { GlobalContext } from "../context/GlobalState";
+import React, { useContext } from 'react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { GlobalContext } from '../context/GlobalState';
 
-const COLORS = ["#00C49F", "#FF8042"]; // income = green, expense = orange
+const COLORS = ['#2f6f4e', '#b23a2e']; // income = ledger green, expense = ledger red
 
 const ChartComponent = () => {
   const { transactions } = useContext(GlobalContext);
@@ -17,38 +17,38 @@ const ChartComponent = () => {
     .reduce((acc, curr) => acc + Math.abs(curr.amount), 0);
 
   const data = [
-    { name: "Income", value: income },
-    { name: "Expense", value: expense },
+    { name: 'Income', value: income },
+    { name: 'Expense', value: expense },
   ];
 
-  // If there's no data, don't show chart
-  if (income === 0 && expense === 0) return null;
+  const isEmpty = income === 0 && expense === 0;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 my-4">
-      <h2 className="text-lg font-semibold mb-3 text-center dark:text-white">
-        Income vs Expense
-      </h2>
-      <ResponsiveContainer width="100%" height={250}>
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={60}
-            outerRadius={90}
-            fill="#8884d8"
-            paddingAngle={5}
-            dataKey="value"
-            label
-          >
-            {data.map((_, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip />
-        </PieChart>
-      </ResponsiveContainer>
+    <div className="card chart-card">
+      <h3 className="card-title">Income vs Expense</h3>
+      {isEmpty ? (
+        <p className="empty-state">Nothing to chart yet.</p>
+      ) : (
+        <ResponsiveContainer width="100%" height={220}>
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              innerRadius={55}
+              outerRadius={85}
+              paddingAngle={5}
+              dataKey="value"
+              label
+            >
+              {data.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 };

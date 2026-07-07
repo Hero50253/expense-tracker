@@ -1,31 +1,32 @@
 import React, { useContext } from 'react';
 import { GlobalContext } from '../context/GlobalState';
+import { formatCurrency } from '../utils/format';
 
 const IncomeExpenses = () => {
   const { transactions } = useContext(GlobalContext);
 
-  const amounts = transactions.map(transaction => transaction.amount);
+  const income = transactions
+    .filter((t) => t.amount > 0)
+    .reduce((acc, t) => acc + t.amount, 0);
 
-  const income = amounts
-    .filter(item => item > 0)
-    .reduce((acc, item) => acc + item, 0)
-    .toFixed(2);
-
-  const expense = (
-    amounts.filter(item => item < 0).reduce((acc, item) => acc + item, 0) * -1
-  ).toFixed(2);
+  const expense =
+    transactions.filter((t) => t.amount < 0).reduce((acc, t) => acc + t.amount, 0) * -1;
 
   return (
-    <div className="inc-exp-container">
-      <div>
-        <h4>Income</h4>
-        <p className="money plus">₹{income}</p>
+    <>
+      <div className="stat credit">
+        <span className="stat-label">
+          Income<em>Cr</em>
+        </span>
+        <span className="stat-figure">₹{formatCurrency(income)}</span>
       </div>
-      <div>
-        <h4>Expense</h4>
-        <p className="money minus">₹{expense}</p>
+      <div className="stat debit">
+        <span className="stat-label">
+          Expense<em>Dr</em>
+        </span>
+        <span className="stat-figure">₹{formatCurrency(expense)}</span>
       </div>
-    </div>
+    </>
   );
 };
 

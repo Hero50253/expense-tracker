@@ -11,9 +11,6 @@ export const GlobalContext = createContext(initialState);
 
 export const GlobalProvider = ({ children }) => {
   const [state, dispatch] = useReducer(AppReducer, initialState);
-  useEffect(() => {
-    localStorage.setItem("transactions", JSON.stringify(state.transactions));
-  }, [state.transactions]);
 
   // Save to localStorage whenever transactions change
   useEffect(() => {
@@ -33,16 +30,19 @@ export const GlobalProvider = ({ children }) => {
       payload: transaction
     });
   }
+
   function resetTransactions() {
     dispatch({
       type: 'RESET_TRANSACTIONS'
     });
   }
+
   return (
     <GlobalContext.Provider value={{
       transactions: state.transactions,
       deleteTransaction,
-      addTransaction
+      addTransaction,
+      resetTransactions
     }}>
       {children}
     </GlobalContext.Provider>

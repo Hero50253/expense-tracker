@@ -1,25 +1,18 @@
-import { useContext } from "react";
-import { GlobalContext } from "../context/GlobalState";
-import StatCard from "./ui/StatCard";
+import React, { useContext } from 'react';
+import { GlobalContext } from '../context/GlobalState';
+import { formatCurrency } from '../utils/format';
 
-function Balance() {
+const Balance = () => {
+  const { transactions } = useContext(GlobalContext);
 
-    const { transactions } = useContext(GlobalContext);
+  const total = transactions.reduce((acc, t) => acc + t.amount, 0);
 
-    const amounts = transactions.map(item => item.amount);
-
-    const total = amounts.reduce((a,b)=>a+b,0).toFixed(2);
-
-    return (
-
-        <StatCard
-            title="Current Balance"
-            value={`₹${total}`}
-            icon="💰"
-        />
-
-    );
-
-}
+  return (
+    <div className="balance-total">
+      <span className="balance-label">Your Balance</span>
+      <span className="balance-figure">₹{formatCurrency(total)}</span>
+    </div>
+  );
+};
 
 export default Balance;

@@ -1,58 +1,57 @@
-import React, { useState, useContext } from "react";
-import { GlobalContext } from "../context/GlobalState";
+import React, { useState, useContext } from 'react';
+import { GlobalContext } from '../context/GlobalState';
 
 const AddTransaction = () => {
-  const [text, setText] = useState("");
-  const [amount, setAmount] = useState("");
+  const [text, setText] = useState('');
+  const [amount, setAmount] = useState('');
   const { addTransaction } = useContext(GlobalContext);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!text.trim() || amount === '') return;
 
-    const newTransaction = {
+    addTransaction({
       id: Date.now(),
-      text,
-      amount: +amount, // convert string to number
-    };
+      text: text.trim(),
+      amount: +amount,
+    });
 
-    addTransaction(newTransaction);
-    setText("");
-    setAmount("");
+    setText('');
+    setAmount('');
   };
 
   return (
-    <div className="bg-white shadow p-4 rounded mb-4">
-      <h3 className="text-xl font-semibold mb-2">Add new transaction</h3>
+    <div className="card receipt-card">
+      <div className="receipt-perforation" aria-hidden="true"></div>
+      <h3 className="card-title">New Entry</h3>
       <form onSubmit={handleSubmit}>
-        <div className="mb-2">
-          <label className="block font-medium">Text</label>
+        <div className="field">
+          <label htmlFor="entry-text">Description</label>
           <input
+            id="entry-text"
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Salary, Book, Rent..."
-            className="w-full p-2 border rounded mt-1"
+            placeholder="Salary, rent, groceries..."
             required
           />
         </div>
-        <div className="mb-4">
-          <label className="block font-medium">
-            Amount <span className="text-sm text-gray-500">(use - for expense)</span>
+        <div className="field">
+          <label htmlFor="entry-amount">
+            Amount <span className="hint">(negative for an expense)</span>
           </label>
           <input
+            id="entry-amount"
             type="number"
+            step="0.01"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="-500 or 1000"
-            className="w-full p-2 border rounded mt-1"
             required
           />
         </div>
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-        >
-          Add Transaction
+        <button type="submit" className="btn-primary">
+          Record entry
         </button>
       </form>
     </div>
