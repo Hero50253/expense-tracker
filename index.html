@@ -1,0 +1,2604 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExpenseOS — Premium Personal Finance</title>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- React & Babel CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useReducer, useContext, createContext, useMemo } = React;
+
+        // --- Context & State Management ---
+        const ExpenseContext = createContext();
+
+        const DEFAULT_STATE = {
+            theme: 'dark',
+            currency: '$', // Default Currency
+            apiUrl: '',    // Backend URL (if empty, runs in offline Local Sandbox mode)
+            token: '',     // JWT Session token
+            userEmail: '', // Authenticated user email
+            transactions: [
+                { id: 't1', desc: 'Salary - Tata Steel Ltd', amount: 5200, type: 'income', category: 'Salary', method: 'Bank Transfer', date: '2026-06-30', recurring: 'Monthly' },
+                { id: 't2', desc: 'Apartment Rent', amount: 1200, type: 'expense', category: 'Rent & Housing', method: 'Bank Transfer', date: '2026-07-01', recurring: 'Monthly' },
+                { id: 't3', desc: 'AWS Cloud Hosting', amount: 45, type: 'expense', category: 'Software/Subscriptions', method: 'Credit Card', date: '2026-07-02', recurring: 'Monthly' },
+                { id: 't4', desc: 'Stripe Merchant Payout', amount: 850, type: 'income', category: 'Side Hustle', method: 'PayPal', date: '2026-07-03', recurring: 'One-time' },
+                { id: 't5', desc: 'Whole Foods Grocery', amount: 120, type: 'expense', category: 'Groceries', method: 'Debit Card', date: '2026-07-04', recurring: 'One-time' },
+                { id: 't6', desc: 'Equinox Gym Membership', amount: 150, type: 'expense', category: 'Health', method: 'Credit Card', date: '2026-07-05', recurring: 'Monthly' },
+                { id: 't7', desc: 'Blue Bottle Coffee', amount: 6.50, type: 'expense', category: 'Dining Out', method: 'Credit Card', date: '2026-07-06', recurring: 'One-time' },
+                { id: 't8', desc: 'Apple One Premier', amount: 32.95, type: 'expense', category: 'Software/Subscriptions', method: 'Credit Card', date: '2026-07-06', recurring: 'Monthly' },
+                { id: 't9', desc: 'Subway Ticket', amount: 2.75, type: 'expense', category: 'Transport', method: 'Debit Card', date: '2026-07-07', recurring: 'One-time' }
+            ],
+            budgets: [
+                { id: 'b1', category: 'Groceries', limit: 400 },
+                { id: 'b2', category: 'Dining Out', limit: 300 },
+                { id: 'b3', category: 'Software/Subscriptions', limit: 150 },
+                { id: 'b4', category: 'Transport', limit: 100 }
+            ],
+            savingsGoals: [
+                { id: 'g1', name: 'Emergency Fund', target: 10000, current: 7500 },
+                { id: 'g2', name: 'Europe Summer Trip', target: 5000, current: 3200 },
+                { id: 'g3', name: 'Tesla Model Y', target: 45000, current: 15000 }
+            ],
+            creditCards: [
+                { id: 'c1', name: 'Apple Card (Goldman Sachs)', limit: 8000, balance: 1450, dueDate: '2026-07-15' },
+                { id: 'c2', name: 'Chase Sapphire Preferred', limit: 15000, balance: 2200, dueDate: '2026-07-25' }
+            ],
+            emis: [
+                { id: 'e1', name: 'MacBook Pro 16" EMI', totalAmount: 2400, monthlyPayment: 200, paidTerms: 7, totalTerms: 12, interestRate: 0 },
+                { id: 'e2', name: 'Car Loan (Toyota)', totalAmount: 28000, monthlyPayment: 480, paidTerms: 14, totalTerms: 60, interestRate: 4.5 }
+            ],
+            friends: [
+                { id: 'f1', name: 'Sarah Chen', email: 'sarah@example.com' },
+                { id: 'f2', name: 'Alex Miller', email: 'alex@example.com' },
+                { id: 'f3', name: 'Liam Patel', email: 'liam@example.com' }
+            ],
+            groups: [
+                { id: 'gr1', name: 'Apartment 4B', members: ['user_0', 'f1', 'f2'], desc: 'Household shared bills' },
+                { id: 'gr2', name: 'Road Trip 2026', members: ['user_0', 'f1', 'f2', 'f3'], desc: 'Summer drive trip costs' }
+            ],
+            sharedExpenses: [
+                { id: 'se1', groupId: 'gr1', desc: 'High-speed Fiber Internet', amount: 90, paidBy: 'user_0', splits: [{ memberId: 'user_0', share: 30 }, { memberId: 'f1', share: 30 }, { memberId: 'f2', share: 30 }], date: '2026-07-01' },
+                { id: 'se2', groupId: 'gr1', desc: 'Weekly Groceries Store', amount: 150, paidBy: 'f1', splits: [{ memberId: 'user_0', share: 50 }, { memberId: 'f1', share: 50 }, { memberId: 'f2', share: 50 }], date: '2026-07-03' },
+                { id: 'se3', groupId: 'gr2', desc: 'Airbnb Beachside House', amount: 480, paidBy: 'user_0', splits: [{ memberId: 'user_0', share: 120 }, { memberId: 'f1', share: 120 }, { memberId: 'f2', share: 120 }, { memberId: 'f3', share: 120 }], date: '2026-07-04' },
+                { id: 'se4', groupId: 'gr2', desc: 'Fuel Refill Station', amount: 80, paidBy: 'f2', splits: [{ memberId: 'user_0', share: 20 }, { memberId: 'f1', share: 20 }, { memberId: 'f2', share: 20 }, { memberId: 'f3', share: 20 }], date: '2026-07-05' }
+            ],
+            settlements: [
+                { id: 's1', fromId: 'f2', toId: 'user_0', amount: 20, date: '2026-07-06' }
+            ]
+        };
+
+        function expenseReducer(state, action) {
+            let newState;
+            switch (action.type) {
+                case 'SET_THEME':
+                    newState = { ...state, theme: action.payload };
+                    break;
+                case 'SET_CURRENCY':
+                    newState = { ...state, currency: action.payload };
+                    break;
+                case 'SET_API_URL':
+                    newState = { ...state, apiUrl: action.payload };
+                    break;
+                case 'AUTH_SUCCESS':
+                    newState = {
+                        ...state,
+                        token: action.payload.token,
+                        userEmail: action.payload.email,
+                        currency: action.payload.currency || state.currency
+                    };
+                    break;
+                case 'LOGOUT':
+                    newState = {
+                        ...state,
+                        token: '',
+                        userEmail: '',
+                        transactions: [],
+                        budgets: [],
+                        savingsGoals: [],
+                        creditCards: [],
+                        emis: [],
+                        friends: [],
+                        groups: [],
+                        sharedExpenses: [],
+                        settlements: []
+                    };
+                    break;
+                case 'SYNC_ALL_DATA':
+                    newState = {
+                        ...state,
+                        ...action.payload
+                    };
+                    break;
+                case 'ADD_TRANSACTION':
+                    newState = { ...state, transactions: [action.payload, ...state.transactions] };
+                    break;
+                case 'DELETE_TRANSACTION':
+                    newState = { ...state, transactions: state.transactions.filter(t => t.id !== action.payload) };
+                    break;
+                case 'ADD_BUDGET':
+                    newState = { ...state, budgets: [...state.budgets, action.payload] };
+                    break;
+                case 'DELETE_BUDGET':
+                    newState = { ...state, budgets: state.budgets.filter(b => b.id !== action.payload) };
+                    break;
+                case 'ADD_GOAL':
+                    newState = { ...state, savingsGoals: [...state.savingsGoals, action.payload] };
+                    break;
+                case 'UPDATE_GOAL':
+                    newState = {
+                        ...state,
+                        savingsGoals: state.savingsGoals.map(g => g.id === action.payload.id ? { ...g, current: action.payload.current } : g)
+                    };
+                    break;
+                case 'ADD_CREDIT_CARD':
+                    newState = { ...state, creditCards: [...state.creditCards, action.payload] };
+                    break;
+                case 'PAY_CREDIT_CARD':
+                    newState = {
+                        ...state,
+                        creditCards: state.creditCards.map(c => c.id === action.payload.id ? { ...c, balance: Math.max(0, c.balance - action.payload.amount) } : c),
+                        transactions: [
+                            {
+                                id: 't_cc_' + Date.now(),
+                                desc: `Payment to ${action.payload.name}`,
+                                amount: action.payload.amount,
+                                type: 'expense',
+                                category: 'Credit Card Payment',
+                                method: 'Bank Transfer',
+                                date: new Date().toISOString().split('T')[0],
+                                recurring: 'One-time'
+                            },
+                            ...state.transactions
+                        ]
+                    };
+                    break;
+                case 'ADD_EMI':
+                    newState = { ...state, emis: [...state.emis, action.payload] };
+                    break;
+                case 'PAY_EMI':
+                    newState = {
+                        ...state,
+                        emis: state.emis.map(e => e.id === action.payload.id ? { ...e, paidTerms: Math.min(e.totalTerms, e.paidTerms + 1) } : e),
+                        transactions: [
+                            {
+                                id: 't_emi_' + Date.now(),
+                                desc: `EMI Payment: ${action.payload.name}`,
+                                amount: action.payload.amount,
+                                type: 'expense',
+                                category: 'EMI Payment',
+                                method: 'Bank Transfer',
+                                date: new Date().toISOString().split('T')[0],
+                                recurring: 'Monthly'
+                            },
+                            ...state.transactions
+                        ]
+                    };
+                    break;
+                case 'ADD_FRIEND':
+                    newState = { ...state, friends: [...state.friends, action.payload] };
+                    break;
+                case 'ADD_GROUP':
+                    newState = { ...state, groups: [...state.groups, action.payload] };
+                    break;
+                case 'ADD_SHARED_EXPENSE':
+                    newState = { ...state, sharedExpenses: [...state.sharedExpenses, action.payload] };
+                    break;
+                case 'ADD_SETTLEMENT':
+                    newState = { ...state, settlements: [...state.settlements, action.payload] };
+                    break;
+                case 'RESET_DATA':
+                    newState = {
+                        ...DEFAULT_STATE,
+                        theme: state.theme,
+                        apiUrl: state.apiUrl
+                    };
+                    break;
+                default:
+                    return state;
+            }
+            localStorage.setItem('expense_os_state', JSON.stringify(newState));
+            return newState;
+        }
+
+        function ExpenseProvider({ children }) {
+            const [state, dispatch] = useReducer(expenseReducer, null, () => {
+                const local = localStorage.getItem('expense_os_state');
+                if (local) {
+                    try {
+                        return JSON.parse(local);
+                    } catch (e) {
+                        return DEFAULT_STATE;
+                    }
+                }
+                return DEFAULT_STATE;
+            });
+
+            // Set root theme element attribute on change
+            useEffect(() => {
+                if (state) {
+                    document.documentElement.setAttribute('data-theme', state.theme);
+                }
+            }, [state.theme]);
+
+            // API fetch helper
+            const apiRequest = async (url, options = {}) => {
+                if (!state.apiUrl) return null;
+                
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                };
+
+                if (state.token) {
+                    headers['Authorization'] = `Bearer ${state.token}`;
+                }
+
+                const response = await fetch(`${state.apiUrl}${url}`, {
+                    ...options,
+                    headers
+                });
+
+                if (response.status === 401 && state.token) {
+                    dispatch({ type: 'LOGOUT' });
+                    alert('Session expired. Please log in again.');
+                    throw new Error('Unauthorized');
+                }
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.message || 'API request failed');
+                }
+
+                return response.json();
+            };
+
+            // Sync from Cloud on mount or token change
+            useEffect(() => {
+                const syncFromCloud = async () => {
+                    if (state.apiUrl && state.token) {
+                        try {
+                            const [txs, bdgts, cards, emisList, frnds, grps, exps, setts] = await Promise.all([
+                                apiRequest('/api/transactions'),
+                                apiRequest('/api/budgets'),
+                                apiRequest('/api/credit-cards'),
+                                apiRequest('/api/emis'),
+                                apiRequest('/api/splitwise/friends'),
+                                apiRequest('/api/splitwise/groups'),
+                                apiRequest('/api/splitwise/expenses'),
+                                apiRequest('/api/splitwise/settlements')
+                            ]);
+
+                            dispatch({
+                                type: 'SYNC_ALL_DATA',
+                                payload: {
+                                    transactions: txs.map(t => ({ ...t, id: t._id })),
+                                    budgets: bdgts.map(b => ({ ...b, id: b._id })),
+                                    creditCards: cards.map(c => ({ ...c, id: c._id })),
+                                    emis: emisList.map(e => ({ ...e, id: e._id })),
+                                    friends: frnds.map(f => ({ ...f, id: f._id })),
+                                    groups: grps.map(g => ({ ...g, id: g._id })),
+                                    sharedExpenses: exps.map(x => ({ ...x, id: x._id })),
+                                    settlements: setts.map(s => ({ ...s, id: s._id }))
+                                }
+                            });
+                        } catch (err) {
+                            console.error('Failed to sync data from backend:', err);
+                        }
+                    }
+                };
+
+                syncFromCloud();
+            }, [state.apiUrl, state.token]);
+
+            // Calculate Splitwise net balances dynamically from shared expenses and settlements
+            const splitwiseBalances = useMemo(() => {
+                const balances = {};
+                balances['user_0'] = 0;
+                state.friends.forEach(f => {
+                    balances[f.id] = 0;
+                });
+
+                // 1. Process shared expenses
+                state.sharedExpenses.forEach(exp => {
+                    const payer = exp.paidBy;
+                    exp.splits.forEach(split => {
+                        const debtor = split.memberId;
+                        if (debtor !== payer) {
+                            balances[debtor] -= split.share;
+                            balances[payer] += split.share;
+                        }
+                    });
+                });
+
+                // 2. Process settlements
+                state.settlements.forEach(set => {
+                    balances[set.fromId] += set.amount;
+                    balances[set.toId] -= set.amount;
+                });
+
+                return balances;
+            }, [state.friends, state.sharedExpenses, state.settlements]);
+
+            const value = {
+                state,
+                dispatch,
+                splitwiseBalances,
+                apiRequest
+            };
+
+            return (
+                <ExpenseContext.Provider value={value}>
+                    {children}
+                </ExpenseContext.Provider>
+            );
+        }
+
+        // --- Custom Component: SVG Charts ---
+        function FinancialChart({ transactions }) {
+            const { state } = useContext(ExpenseContext);
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
+            const incomeData = [4500, 4200, 4800, 5200, 4900, 5800, 0];
+            const expenseData = [3100, 2900, 3500, 3800, 3100, 3300, 0];
+
+            // Add current month's actual data from state
+            const currentMonthIndex = 6; // July
+            let currentInc = 0;
+            let currentExp = 0;
+            transactions.forEach(t => {
+                if (t.date && t.date.startsWith('2026-07')) {
+                    if (t.type === 'income') currentInc += t.amount;
+                    else currentExp += t.amount;
+                }
+            });
+            incomeData[currentMonthIndex] = currentInc;
+            expenseData[currentMonthIndex] = currentExp;
+
+            const maxVal = Math.max(...incomeData, ...expenseData, 6000) * 1.15;
+            
+            const width = 600;
+            const height = 180;
+            const paddingLeft = 50;
+            const paddingRight = 20;
+            const paddingTop = 20;
+            const paddingBottom = 30;
+
+            const chartWidth = width - paddingLeft - paddingRight;
+            const chartHeight = height - paddingTop - paddingBottom;
+
+            const getX = (index) => paddingLeft + (index / (months.length - 1)) * chartWidth;
+            const getY = (val) => height - paddingBottom - (val / maxVal) * chartHeight;
+
+            const incomePoints = incomeData.map((val, idx) => `${getX(idx)},${getY(val)}`).join(' ');
+            const expensePoints = expenseData.map((val, idx) => `${getX(idx)},${getY(val)}`).join(' ');
+
+            const incomeAreaPoints = `${getX(0)},${height - paddingBottom} ` + incomePoints + ` ${getX(months.length - 1)},${height - paddingBottom}`;
+            const expenseAreaPoints = `${getX(0)},${height - paddingBottom} ` + expensePoints + ` ${getX(months.length - 1)},${height - paddingBottom}`;
+
+            return (
+                <div className="chart-container">
+                    <svg className="chart-svg" viewBox={`0 0 ${width} ${height}`}>
+                        <defs>
+                            <linearGradient id="income-gradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="var(--success)" stopOpacity="0.3" />
+                                <stop offset="100%" stopColor="var(--success)" stopOpacity="0" />
+                            </linearGradient>
+                            <linearGradient id="expense-gradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="var(--danger)" stopOpacity="0.25" />
+                                <stop offset="100%" stopColor="var(--danger)" stopOpacity="0" />
+                            </linearGradient>
+                        </defs>
+                        {/* Grid lines */}
+                        {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+                            const yVal = maxVal * ratio;
+                            const y = getY(yVal);
+                            return (
+                                <g key={i}>
+                                    <line className="chart-grid-line" x1={paddingLeft} y1={y} x2={width - paddingRight} y2={y} />
+                                    <text className="chart-label" x={paddingLeft - 10} y={y + 4} textAnchor="end">
+                                        {state.currency}{Math.round(yVal)}
+                                    </text>
+                                </g>
+                            );
+                        })}
+
+                        {/* Month labels */}
+                        {months.map((m, idx) => (
+                            <text key={idx} className="chart-label" x={getX(idx)} y={height - 8} textAnchor="middle">
+                                {m}
+                            </text>
+                        ))}
+
+                        {/* Chart Area Fills */}
+                        <polygon className="chart-area-income" points={incomeAreaPoints} />
+                        <polygon className="chart-area-expense" points={expenseAreaPoints} />
+
+                        {/* Chart Lines */}
+                        <polyline className="chart-line-income" points={incomePoints} />
+                        <polyline className="chart-line-expense" points={expensePoints} />
+
+                        {/* Data Points Tooltips & Circles */}
+                        {incomeData.map((val, idx) => (
+                            <circle key={`inc-${idx}`} cx={getX(idx)} cy={getY(val)} r="4" fill="var(--success)" stroke="var(--bg-card)" strokeWidth="2" />
+                        ))}
+                        {expenseData.map((val, idx) => (
+                            <circle key={`exp-${idx}`} cx={getX(idx)} cy={getY(val)} r="4" fill="var(--danger)" stroke="var(--bg-card)" strokeWidth="2" />
+                        ))}
+                    </svg>
+                </div>
+            );
+        }
+
+        function DonutChart({ transactions }) {
+            const { state } = useContext(ExpenseContext);
+            const categoryTotals = {};
+            let totalExpenses = 0;
+
+            transactions.forEach(t => {
+                if (t.type === 'expense') {
+                    categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+                    totalExpenses += t.amount;
+                }
+            });
+
+            const sortedCategories = Object.keys(categoryTotals)
+                .map(cat => ({ name: cat, value: categoryTotals[cat] }))
+                .sort((a, b) => b.value - a.value);
+
+            const colors = {
+                'Rent & Housing': 'var(--accent)',
+                'Groceries': 'var(--accent-secondary)',
+                'Dining Out': 'var(--warning)',
+                'Software/Subscriptions': 'var(--accent-purple)',
+                'Health': '#ec4899',
+                'Transport': '#f43f5e',
+                'Credit Card Payment': '#64748b',
+                'EMI Payment': '#a855f7',
+                'Other': '#10b981'
+            };
+
+            const getColor = (name) => colors[name] || '#6b7280';
+
+            const radius = 50;
+            const circumference = 2 * Math.PI * radius;
+            let currentOffset = 0;
+
+            const segments = sortedCategories.map(cat => {
+                const percentage = totalExpenses > 0 ? cat.value / totalExpenses : 0;
+                const dashArray = `${percentage * circumference} ${circumference}`;
+                const dashOffset = currentOffset;
+                currentOffset -= percentage * circumference;
+                return {
+                    ...cat,
+                    dashArray,
+                    dashOffset,
+                    percentage,
+                    color: getColor(cat.name)
+                };
+            });
+
+            return (
+                <div className="donut-container">
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyCenter: 'center', width: '160px', height: '160px' }}>
+                        <svg className="donut-svg" viewBox="0 0 120 120">
+                            <circle className="donut-bg" cx="60" cy="60" r={radius} />
+                            {segments.map((seg, idx) => (
+                                <circle
+                                    key={idx}
+                                    className="donut-segment"
+                                    cx="60"
+                                    cy="60"
+                                    r={radius}
+                                    stroke={seg.color}
+                                    strokeDasharray={seg.dashArray}
+                                    strokeDashoffset={seg.dashOffset}
+                                />
+                            ))}
+                        </svg>
+                        <div className="donut-center" style={{ left: 0, right: 0, top: 0, bottom: 0, margin: 'auto' }}>
+                            <span className="donut-center-val">{state.currency}{totalExpenses.toFixed(0)}</span>
+                            <span className="donut-center-lbl">Total Spent</span>
+                        </div>
+                    </div>
+
+                    <div className="chart-legend">
+                        {segments.slice(0, 4).map((seg, idx) => (
+                            <div key={idx} className="legend-item">
+                                <div className="legend-color" style={{ backgroundColor: seg.color }}></div>
+                                <span style={{ flex: 1 }}>{seg.name}</span>
+                                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                                    {Math.round(seg.percentage * 100)}%
+                                </span>
+                            </div>
+                        ))}
+                        {segments.length > 4 && (
+                            <div className="legend-item">
+                                <div className="legend-color" style={{ backgroundColor: '#6b7280' }}></div>
+                                <span style={{ flex: 1 }}>Others</span>
+                                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                                    {Math.round(segments.slice(4).reduce((sum, s) => sum + s.percentage, 0) * 100)}%
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- Custom Component: Savings Goal Ring ---
+        function SavingsGoalRing({ goal, onSave }) {
+            const { state } = useContext(ExpenseContext);
+            const pct = Math.min(100, Math.round((goal.current / goal.target) * 100));
+            const radius = 32;
+            const circ = 2 * Math.PI * radius;
+            const offset = circ - (pct / 100) * circ;
+
+            const [showAddVal, setShowAddVal] = useState(false);
+            const [addAmt, setAddAmt] = useState('');
+
+            const handleSave = () => {
+                if (!addAmt || isNaN(addAmt)) return;
+                onSave(goal.id, goal.current + parseFloat(addAmt));
+                setAddAmt('');
+                setShowAddVal(false);
+            };
+
+            return (
+                <div className="glass-card savings-ring-card">
+                    <div className="svg-ring-container">
+                        <svg>
+                            <circle className="ring-bg" cx="40" cy="40" r={radius} />
+                            <circle
+                                className="ring-fill"
+                                cx="40"
+                                cy="40"
+                                r={radius}
+                                strokeDasharray={circ}
+                                strokeDashoffset={offset}
+                            />
+                        </svg>
+                        <span className="ring-text">{pct}%</span>
+                    </div>
+
+                    <div className="savings-goal-details">
+                        <h4 className="goal-name">{goal.name}</h4>
+                        <div className="goal-values">
+                            <strong>{state.currency}{goal.current.toLocaleString()}</strong> of {state.currency}{goal.target.toLocaleString()}
+                        </div>
+                        {showAddVal ? (
+                            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                                <input
+                                    type="number"
+                                    className="form-control"
+                                    style={{ padding: '4px 8px', fontSize: '12px', width: '80px' }}
+                                    placeholder="Amount"
+                                    value={addAmt}
+                                    onChange={e => setAddAmt(e.target.value)}
+                                />
+                                <button className="btn btn-primary btn-sm" onClick={handleSave}>Add</button>
+                                <button className="btn btn-secondary btn-sm" onClick={() => setShowAddVal(false)}><i className="fa-solid fa-xmark"></i></button>
+                            </div>
+                        ) : (
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                style={{ marginTop: '8px', padding: '4px 10px', fontSize: '11px' }}
+                                onClick={() => setShowAddVal(true)}
+                            >
+                                <i className="fa-solid fa-plus"></i> Add Funds
+                            </button>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- Auth Screen (Gateway) ---
+        function AuthView() {
+            const { state, dispatch } = useContext(ExpenseContext);
+            const [isLogin, setIsLogin] = useState(true);
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [currency, setCurrency] = useState('$');
+            const [loading, setLoading] = useState(false);
+
+            const handleAuth = async (e) => {
+                e.preventDefault();
+                if (!email || !password) return;
+                setLoading(true);
+
+                try {
+                    const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
+                    const body = isLogin ? { email, password } : { email, password, currency };
+
+                    const res = await fetch(`${state.apiUrl}${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || 'Authentication failed');
+
+                    dispatch({
+                        type: 'AUTH_SUCCESS',
+                        payload: {
+                            token: data.token,
+                            email: data.user.email,
+                            currency: data.user.currency
+                        }
+                    });
+                } catch (err) {
+                    alert(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleBypass = () => {
+                dispatch({ type: 'SET_API_URL', payload: '' }); // resets to local mode
+            };
+
+            return (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px', background: 'var(--bg-app)' }}>
+                    <div className="glass-card" style={{ width: '400px', maxWidth: '100%', padding: '32px' }}>
+                        <div className="brand" style={{ justifyContent: 'center', marginBottom: '24px' }}>
+                            <div className="brand-logo"><i className="fa-solid fa-coins"></i></div>
+                            <span className="brand-name">ExpenseOS Gateway</span>
+                        </div>
+
+                        <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '24px' }}>
+                            <button
+                                className="btn"
+                                style={{ flex: 1, borderBottomRightRadius: 0, borderBottomLeftRadius: 0, background: 'none', borderBottom: isLogin ? '2px solid var(--accent)' : 'none', color: isLogin ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: isLogin ? '600' : '400' }}
+                                onClick={() => setIsLogin(true)}
+                            >
+                                Sign In
+                            </button>
+                            <button
+                                className="btn"
+                                style={{ flex: 1, borderBottomRightRadius: 0, borderBottomLeftRadius: 0, background: 'none', borderBottom: !isLogin ? '2px solid var(--accent)' : 'none', color: !isLogin ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: !isLogin ? '600' : '400' }}
+                                onClick={() => setIsLogin(false)}
+                            >
+                                Create Account
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleAuth}>
+                            <div className="form-group">
+                                <label className="form-label">Email Address</label>
+                                <input type="email" required className="form-control" placeholder="user@domain.com" value={email} onChange={e => setEmail(e.target.value)} />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Password</label>
+                                <input type="password" required className="form-control" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
+                            </div>
+
+                            {!isLogin && (
+                                <div className="form-group">
+                                    <label className="form-label">Base Currency Selection</label>
+                                    <select className="form-control" value={currency} onChange={e => setCurrency(e.target.value)}>
+                                        <option value="$">US Dollar ($)</option>
+                                        <option value="₹">Indian Rupee (₹)</option>
+                                    </select>
+                                </div>
+                            )}
+
+                            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }} disabled={loading}>
+                                {loading ? 'Authorizing Gateway...' : isLogin ? 'Sign In Session' : 'Form User Account'}
+                            </button>
+                        </form>
+
+                        <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                            <button className="btn btn-secondary btn-sm" onClick={handleBypass}>
+                                <i className="fa-solid fa-arrow-left"></i> Run in Local Offline Sandbox
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- Core Application Layout ---
+        function App() {
+            const { state, dispatch } = useContext(ExpenseContext);
+            const [currentTab, setCurrentTab] = useState('dashboard');
+
+            if (!state) return <div style={{ color: 'white', textAlign: 'center', marginTop: '20%' }}>Booting ExpenseOS...</div>;
+
+            // Render Auth gateway if cloud URL exists and no active token
+            if (state.apiUrl && !state.token) {
+                return <AuthView />;
+            }
+
+            const toggleTheme = () => {
+                dispatch({ type: 'SET_THEME', payload: state.theme === 'dark' ? 'light' : 'dark' });
+            };
+
+            const handleLogout = () => {
+                if (confirm('Are you sure you want to end your secure session?')) {
+                    dispatch({ type: 'LOGOUT' });
+                    setCurrentTab('dashboard');
+                }
+            };
+
+            return (
+                <div className="app-container">
+                    {/* Left Sidebar */}
+                    <aside className="sidebar">
+                        <div className="brand">
+                            <div className="brand-logo"><i className="fa-solid fa-coins"></i></div>
+                            <span className="brand-name">ExpenseOS</span>
+                        </div>
+
+                        <ul className="nav-menu">
+                            <li className={`nav-item ${currentTab === 'dashboard' ? 'active' : ''}`}>
+                                <button onClick={() => setCurrentTab('dashboard')}>
+                                    <i className="fa-solid fa-chart-line"></i> Dashboard
+                                </button>
+                            </li>
+                            <li className={`nav-item ${currentTab === 'transactions' ? 'active' : ''}`}>
+                                <button onClick={() => setCurrentTab('transactions')}>
+                                    <i className="fa-solid fa-list-check"></i> Ledger
+                                </button>
+                            </li>
+                            <li className={`nav-item ${currentTab === 'budgets' ? 'active' : ''}`}>
+                                <button onClick={() => setCurrentTab('budgets')}>
+                                    <i className="fa-solid fa-piggy-bank"></i> Budgets & Goals
+                                </button>
+                            </li>
+                            <li className={`nav-item ${currentTab === 'credit' ? 'active' : ''}`}>
+                                <button onClick={() => setCurrentTab('credit')}>
+                                    <i className="fa-solid fa-credit-card"></i> Cards & EMIs
+                                </button>
+                            </li>
+                            <li className={`nav-item ${currentTab === 'splitwise' ? 'active' : ''}`}>
+                                <button onClick={() => setCurrentTab('splitwise')}>
+                                    <i className="fa-solid fa-people-arrows"></i> Splitwise Mod
+                                </button>
+                            </li>
+                            <li className={`nav-item ${currentTab === 'analytics' ? 'active' : ''}`}>
+                                <button onClick={() => setCurrentTab('analytics')}>
+                                    <i className="fa-solid fa-calculator"></i> Calculators
+                                </button>
+                            </li>
+                            <li className={`nav-item ${currentTab === 'settings' ? 'active' : ''}`}>
+                                <button onClick={() => setCurrentTab('settings')}>
+                                    <i className="fa-solid fa-sliders"></i> Settings
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div className="sidebar-footer">
+                            {state.token && (
+                                <button className="theme-toggle-btn" style={{ borderColor: 'var(--danger-glow)', color: 'var(--danger)' }} onClick={handleLogout}>
+                                    <i className="fa-solid fa-right-from-bracket"></i> End Session
+                                </button>
+                            )}
+
+                            <button className="theme-toggle-btn" onClick={toggleTheme}>
+                                {state.theme === 'dark' ? (
+                                    <>
+                                        <i className="fa-solid fa-sun"></i> Light Mode
+                                    </>
+                                ) : (
+                                    <>
+                                        <i className="fa-solid fa-moon"></i> Dark Mode
+                                    </>
+                                )}
+                            </button>
+
+                            <div className="user-profile">
+                                <div className="user-avatar">{state.token ? state.userEmail.slice(0,2).toUpperCase() : 'LS'}</div>
+                                <div className="user-info">
+                                    <div className="user-name">{state.token ? state.userEmail : 'Local Sandbox User'}</div>
+                                    <div className="user-role">{state.token ? 'Cloud Connected' : 'Offline Sandbox'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main Content Area */}
+                    <main className="main-content">
+                        {currentTab === 'dashboard' && <DashboardView setCurrentTab={setCurrentTab} />}
+                        {currentTab === 'transactions' && <TransactionsView />}
+                        {currentTab === 'budgets' && <BudgetsView />}
+                        {currentTab === 'credit' && <CreditView />}
+                        {currentTab === 'splitwise' && <SplitwiseView />}
+                        {currentTab === 'analytics' && <AnalyticsView />}
+                        {currentTab === 'settings' && <SettingsView />}
+                    </main>
+                </div>
+            );
+        }
+
+        // --- View Component: Dashboard ---
+        function DashboardView({ setCurrentTab }) {
+            const { state, splitwiseBalances, apiRequest } = useContext(ExpenseContext);
+            const [showAddTx, setShowAddTx] = useState(false);
+
+            // Compute metrics
+            const totals = useMemo(() => {
+                let income = 0;
+                let expense = 0;
+                state.transactions.forEach(t => {
+                    if (t.type === 'income') income += t.amount;
+                    else expense += t.amount;
+                });
+                return { income, expense, balance: income - expense };
+            }, [state.transactions]);
+
+            const splitwiseSummary = useMemo(() => {
+                let owesYou = 0;
+                let youOwe = 0;
+                Object.keys(splitwiseBalances).forEach(id => {
+                    if (id !== 'user_0') {
+                        const bal = splitwiseBalances[id];
+                        if (bal > 0) owesYou += bal;
+                        if (bal < 0) youOwe += Math.abs(bal);
+                    }
+                });
+                return { owesYou, youOwe, net: owesYou - youOwe };
+            }, [splitwiseBalances]);
+
+            // Formulate AI Spending Insights dynamically
+            const aiInsightText = useMemo(() => {
+                const totalExp = totals.expense;
+                const softwareExp = state.transactions
+                    .filter(t => t.type === 'expense' && t.category === 'Software/Subscriptions')
+                    .reduce((sum, t) => sum + t.amount, 0);
+                
+                if (softwareExp > 70) {
+                    return `Your active cloud/SaaS subscriptions equal ${state.currency}${softwareExp.toFixed(0)}, taking up ${(softwareExp / totalExp * 100).toFixed(0)}% of your monthly expenditure. Consider auditing redundant software tools.`;
+                }
+                return `Monthly savings rate is currently sitting at ${totals.income > 0 ? ((totals.income - totals.expense)/totals.income*100).toFixed(0) : 0}%. You are matching your target allocations for Q3. Keep it up!`;
+            }, [totals, state.transactions, state.currency]);
+
+            return (
+                <div>
+                    <div className="header">
+                        <div className="header-title">
+                            <h1>Executive Financial Overview</h1>
+                            <p>Premium Real-Time Wealth Intelligence Ledger ({state.token ? 'Cloud Account' : 'Sandbox Mode'})</p>
+                        </div>
+                        <div className="header-actions">
+                            <button className="btn btn-primary" onClick={() => setShowAddTx(true)}>
+                                <i className="fa-solid fa-plus"></i> Record Transaction
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Stats Dashboard Grid */}
+                    <div className="stats-grid">
+                        <div className="glass-card">
+                            <div className="stat-header">
+                                <span>NET LIQUIDITY BALANCE</span>
+                                <div className="stat-icon net"><i className="fa-solid fa-wallet"></i></div>
+                            </div>
+                            <div className="stat-value">{state.currency}{totals.balance.toLocaleString()}</div>
+                            <div className="stat-trend positive">
+                                <i className="fa-solid fa-arrow-trend-up"></i>
+                                <span>+12.4% this cycle</span>
+                            </div>
+                        </div>
+
+                        <div className="glass-card">
+                            <div className="stat-header">
+                                <span>MONTHLY DEPOSITS</span>
+                                <div className="stat-icon income"><i className="fa-solid fa-arrow-down-long"></i></div>
+                            </div>
+                            <div className="stat-value">{state.currency}{totals.income.toLocaleString()}</div>
+                            <div className="stat-trend positive">
+                                <i className="fa-solid fa-arrow-trend-up"></i>
+                                <span>+8.2% vs average</span>
+                            </div>
+                        </div>
+
+                        <div className="glass-card">
+                            <div className="stat-header">
+                                <span>MONTHLY DEBITS</span>
+                                <div className="stat-icon expense"><i className="fa-solid fa-arrow-up-long"></i></div>
+                            </div>
+                            <div className="stat-value">{state.currency}{totals.expense.toLocaleString()}</div>
+                            <div className="stat-trend negative">
+                                <i className="fa-solid fa-arrow-trend-down"></i>
+                                <span>-4.1% optimization</span>
+                            </div>
+                        </div>
+
+                        <div className="glass-card">
+                            <div className="stat-header">
+                                <span>SPLITWISE NET BALANCE</span>
+                                <div className="stat-icon savings"><i className="fa-solid fa-people-arrows"></i></div>
+                            </div>
+                            <div className="stat-value" style={{ color: splitwiseSummary.net >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                                {splitwiseSummary.net >= 0 ? '+' : '-'}{state.currency}{Math.abs(splitwiseSummary.net).toLocaleString()}
+                            </div>
+                            <div className="stat-trend neutral">
+                                <span>Owed: {state.currency}{splitwiseSummary.owesYou} | Owe: {state.currency}{splitwiseSummary.youOwe}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main Analytics Grid */}
+                    <div className="dashboard-grid-main">
+                        {/* Interactive Graph Card */}
+                        <div className="glass-card">
+                            <div className="card-title-bar">
+                                <h3><i className="fa-solid fa-chart-area"></i> Cash Flow & Liquidity Pipeline</h3>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <span style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--success)' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--success)' }}></div> Deposits
+                                    </span>
+                                    <span style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--danger)' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--danger)' }}></div> Debits
+                                    </span>
+                                </div>
+                            </div>
+                            <FinancialChart transactions={state.transactions} />
+                        </div>
+
+                        {/* Category Distribution Donut */}
+                        <div className="glass-card">
+                            <div className="card-title-bar">
+                                <h3><i className="fa-solid fa-chart-pie"></i> Expense Breakdown</h3>
+                            </div>
+                            <DonutChart transactions={state.transactions} />
+                        </div>
+                    </div>
+
+                    <div className="dashboard-grid-secondary">
+                        {/* Recent Transactions list */}
+                        <div className="glass-card">
+                            <div className="card-title-bar">
+                                <h3><i className="fa-solid fa-clock-rotate-left"></i> Recent Activity</h3>
+                                <button className="btn btn-secondary btn-sm" onClick={() => setCurrentTab('transactions')}>
+                                    Full Ledger
+                                </button>
+                            </div>
+                            <div className="transaction-list">
+                                {state.transactions.slice(0, 5).map(t => (
+                                    <div className="transaction-row" key={t.id}>
+                                        <div className="tx-info">
+                                            <div className={`tx-icon-wrapper ${t.type === 'income' ? 'income' : ''}`}>
+                                                {t.type === 'income' ? <i className="fa-solid fa-arrow-down-left"></i> : <i className="fa-solid fa-arrow-up-right"></i>}
+                                            </div>
+                                            <div className="tx-details">
+                                                <span className="tx-desc">{t.desc}</span>
+                                                <div className="tx-meta">
+                                                    <span>{t.date}</span>
+                                                    <span className="tx-tag">{t.category}</span>
+                                                    <span className="tx-tag">{t.method}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span className={`tx-amount ${t.type === 'income' ? 'income' : 'expense'}`}>
+                                            {t.type === 'income' ? '+' : '-'}{state.currency}{t.amount.toFixed(2)}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* AI-powered Insights & Budget Summaries */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            <div className="glass-card ai-advisor-card">
+                                <div className="ai-advisor-header">
+                                    <i className="fa-solid fa-brain"></i>
+                                    <span>AI Financial Advisor</span>
+                                </div>
+                                <div className="ai-advisor-body">
+                                    {aiInsightText}
+                                    <div className="ai-insight-bullet">
+                                        <i className="fa-solid fa-circle-check"></i>
+                                        <span>Optimal saving rate benchmark is currently 30% for your demographic.</span>
+                                    </div>
+                                    <div className="ai-insight-bullet">
+                                        <i className="fa-solid fa-circle-check"></i>
+                                        <span>No high-interest credit debt carries over to this statement cycle. Outstanding credit cards total {state.currency}{state.creditCards.reduce((acc, c) => acc + c.balance, 0).toLocaleString()} (under 15% limit).</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="glass-card">
+                                <div className="card-title-bar">
+                                    <h3><i className="fa-solid fa-gauge-high"></i> Top Active Budgets</h3>
+                                    <button className="btn btn-secondary btn-sm" onClick={() => setCurrentTab('budgets')}>
+                                        Manage
+                                    </button>
+                                </div>
+                                {state.budgets.slice(0, 3).map(b => {
+                                    const spent = state.transactions
+                                        .filter(t => t.type === 'expense' && t.category === b.category)
+                                        .reduce((sum, t) => sum + t.amount, 0);
+                                    const pct = Math.min(100, Math.round((spent / b.limit) * 100));
+                                    const color = pct > 90 ? 'red' : pct > 75 ? 'yellow' : 'green';
+                                    return (
+                                        <div className="budget-progress-container" key={b.id}>
+                                            <div className="budget-info-row">
+                                                <span className="budget-cat">{b.category}</span>
+                                                <span className="budget-val">{state.currency}{spent.toFixed(0)} of {state.currency}{b.limit} ({pct}%)</span>
+                                            </div>
+                                            <div className="progress-track">
+                                                <div className={`progress-fill ${color}`} style={{ width: `${pct}%` }}></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+
+                    {showAddTx && <AddTransactionModal onClose={() => setShowAddTx(false)} />}
+                </div>
+            );
+        }
+
+        // --- Modal Component: Add Transaction ---
+        function AddTransactionModal({ onClose }) {
+            const { state, dispatch, apiRequest } = useContext(ExpenseContext);
+            const [desc, setDesc] = useState('');
+            const [amount, setAmount] = useState('');
+            const [type, setType] = useState('expense');
+            const [category, setCategory] = useState('Groceries');
+            const [method, setMethod] = useState('Credit Card');
+            const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+            const [recurring, setRecurring] = useState('One-time');
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!desc || !amount) return;
+
+                const txData = {
+                    desc,
+                    amount: parseFloat(amount),
+                    type,
+                    category,
+                    method,
+                    date,
+                    recurring
+                };
+
+                try {
+                    if (state.apiUrl && state.token) {
+                        const saved = await apiRequest('/api/transactions', {
+                            method: 'POST',
+                            body: JSON.stringify(txData)
+                        });
+                        dispatch({ type: 'ADD_TRANSACTION', payload: { ...saved, id: saved._id } });
+                    } else {
+                        // Local
+                        dispatch({ type: 'ADD_TRANSACTION', payload: { ...txData, id: 't_' + Date.now() } });
+                    }
+                    onClose();
+                } catch (err) {
+                    alert(err.message);
+                }
+            };
+
+            const categories = type === 'income' 
+                ? ['Salary', 'Side Hustle', 'Investments', 'Gifts', 'Other']
+                : ['Rent & Housing', 'Groceries', 'Dining Out', 'Shopping', 'Transport', 'Entertainment', 'Software/Subscriptions', 'Utilities', 'Health', 'Insurance', 'Other'];
+
+            return (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h3>Record Financial Ledger Entry</h3>
+                            <button className="modal-close" onClick={onClose}><i className="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <form onSubmit={handleSubmit}>
+                            <div className="modal-body">
+                                <div className="form-group">
+                                    <label className="form-label">Description / Merchant</label>
+                                    <input type="text" className="form-control" required placeholder="e.g. AWS Cloud Platform" value={desc} onChange={e => setDesc(e.target.value)} />
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">Transaction Type</label>
+                                        <select className="form-control" value={type} onChange={e => {
+                                            setType(e.target.value);
+                                            setCategory(e.target.value === 'income' ? 'Salary' : 'Groceries');
+                                        }}>
+                                            <option value="expense">Debit (Expense)</option>
+                                            <option value="income">Credit (Income)</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Amount ({state.currency})</label>
+                                        <input type="number" step="0.01" className="form-control" required placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} />
+                                    </div>
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">Category</label>
+                                        <select className="form-control" value={category} onChange={e => setCategory(e.target.value)}>
+                                            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Payment Gateway / Account</label>
+                                        <select className="form-control" value={method} onChange={e => setMethod(e.target.value)}>
+                                            <option value="Credit Card">Credit Card</option>
+                                            <option value="Debit Card">Debit Card</option>
+                                            <option value="Bank Transfer">Bank Transfer</option>
+                                            <option value="Cash">Cash</option>
+                                            <option value="PayPal">PayPal</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">Execution Date</label>
+                                        <input type="date" className="form-control" required value={date} onChange={e => setDate(e.target.value)} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Reoccurrence Interval</label>
+                                        <select className="form-control" value={recurring} onChange={e => setRecurring(e.target.value)}>
+                                            <option value="One-time">One-time / Instant</option>
+                                            <option value="Weekly">Weekly Cycle</option>
+                                            <option value="Monthly">Monthly Bill</option>
+                                            <option value="Yearly">Annual Renewal</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">Commit Entry</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- View Component: Ledger (Full Transactions) ---
+        function TransactionsView() {
+            const { state, dispatch, apiRequest } = useContext(ExpenseContext);
+            const [search, setSearch] = useState('');
+            const [typeFilter, setTypeFilter] = useState('all');
+            const [catFilter, setCatFilter] = useState('all');
+            const [showAddTx, setShowAddTx] = useState(false);
+
+            const categories = useMemo(() => {
+                const cats = new Set();
+                state.transactions.forEach(t => cats.add(t.category));
+                return Array.from(cats);
+            }, [state.transactions]);
+
+            const filteredTransactions = useMemo(() => {
+                return state.transactions.filter(t => {
+                    const matchesSearch = t.desc.toLowerCase().includes(search.toLowerCase()) || t.category.toLowerCase().includes(search.toLowerCase());
+                    const matchesType = typeFilter === 'all' ? true : t.type === typeFilter;
+                    const matchesCat = catFilter === 'all' ? true : t.category === catFilter;
+                    return matchesSearch && matchesType && matchesCat;
+                });
+            }, [state.transactions, search, typeFilter, catFilter]);
+
+            const handleExportCSV = () => {
+                const headers = ['Description', 'Amount', 'Type', 'Category', 'Payment Method', 'Date', 'Recurring'];
+                const rows = filteredTransactions.map(t => [
+                    `"${t.desc.replace(/"/g, '""')}"`,
+                    t.amount,
+                    t.type,
+                    t.category,
+                    t.method,
+                    t.date,
+                    t.recurring
+                ]);
+
+                const csvContent = "data:text/csv;charset=utf-8," 
+                    + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `ExpenseOS_Ledger_Export_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            const handleDelete = async (id) => {
+                if (confirm('Delete this ledger record?')) {
+                    try {
+                        if (state.apiUrl && state.token) {
+                            await apiRequest(`/api/transactions/${id}`, { method: 'DELETE' });
+                        }
+                        dispatch({ type: 'DELETE_TRANSACTION', payload: id });
+                    } catch (err) {
+                        alert(err.message);
+                    }
+                }
+            };
+
+            return (
+                <div>
+                    <div className="header">
+                        <div className="header-title">
+                            <h1>Unified Account Ledger</h1>
+                            <p>Audit and manage your complete historical financial records</p>
+                        </div>
+                        <div className="header-actions">
+                            <button className="btn btn-secondary" onClick={handleExportCSV}>
+                                <i className="fa-solid fa-file-csv"></i> Export CSV
+                            </button>
+                            <button className="btn btn-primary" onClick={() => setShowAddTx(true)}>
+                                <i className="fa-solid fa-plus"></i> Record Entry
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="glass-card toolbar">
+                        <div className="search-wrapper">
+                            <i className="fa-solid fa-magnifying-glass search-icon"></i>
+                            <input
+                                type="text"
+                                className="search-input"
+                                placeholder="Search ledger by description, vendor, tags..."
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="filters-group">
+                            <select className="filter-select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+                                <option value="all">All Types</option>
+                                <option value="income">Deposits (Credits)</option>
+                                <option value="expense">Debits (Expenses)</option>
+                            </select>
+
+                            <select className="filter-select" value={catFilter} onChange={e => setCatFilter(e.target.value)}>
+                                <option value="all">All Categories</option>
+                                {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="ledger-table-container">
+                        <table className="ledger-table">
+                            <thead>
+                                <tr>
+                                    <th>Executed Date</th>
+                                    <th>Ledger Details</th>
+                                    <th>Category</th>
+                                    <th>Payment Account</th>
+                                    <th>Cycle</th>
+                                    <th style={{ textAlign: 'right' }}>Valuation</th>
+                                    <th style={{ width: '80px', textAlign: 'center' }}>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredTransactions.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="7" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-secondary)' }}>
+                                            No matching transaction records located in memory.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filteredTransactions.map(t => (
+                                        <tr key={t.id}>
+                                            <td style={{ color: 'var(--text-secondary)' }}>{t.date}</td>
+                                            <td style={{ fontWeight: 600 }}>{t.desc}</td>
+                                            <td><span className="tx-tag">{t.category}</span></td>
+                                            <td><span className="tx-tag" style={{ background: 'rgba(99,102,241,0.05)', color: 'var(--accent)' }}>{t.method}</span></td>
+                                            <td style={{ color: 'var(--text-muted)' }}>{t.recurring}</td>
+                                            <td style={{ textAlign: 'right', fontWeight: 700, fontSize: '14px' }} className={t.type === 'income' ? 'income' : 'expense'}>
+                                                {t.type === 'income' ? '+' : '-'}{state.currency}{t.amount.toFixed(2)}
+                                            </td>
+                                            <td style={{ textAlign: 'center' }}>
+                                                <button className="btn btn-secondary btn-sm btn-danger" style={{ padding: '4px 8px' }} onClick={() => handleDelete(t.id)}>
+                                                    <i className="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {showAddTx && <AddTransactionModal onClose={() => setShowAddTx(false)} />}
+                </div>
+            );
+        }
+
+        // --- View Component: Budgets & Goals ---
+        function BudgetsView() {
+            const { state, dispatch, apiRequest } = useContext(ExpenseContext);
+            const [showAddBudget, setShowAddBudget] = useState(false);
+            const [showAddGoal, setShowAddGoal] = useState(false);
+
+            const [bCategory, setBCategory] = useState('Groceries');
+            const [bLimit, setBLimit] = useState('');
+
+            const [gName, setGName] = useState('');
+            const [gTarget, setGTarget] = useState('');
+            const [gCurrent, setGCurrent] = useState('');
+
+            const handleAddBudgetSubmit = async (e) => {
+                e.preventDefault();
+                if (!bLimit) return;
+                
+                if (state.budgets.some(b => b.category === bCategory)) {
+                    alert('A budget limit already exists for this category.');
+                    return;
+                }
+
+                const budgetData = { category: bCategory, limit: parseFloat(bLimit) };
+
+                try {
+                    if (state.apiUrl && state.token) {
+                        const saved = await apiRequest('/api/budgets', {
+                            method: 'POST',
+                            body: JSON.stringify(budgetData)
+                        });
+                        dispatch({ type: 'ADD_BUDGET', payload: { ...saved, id: saved._id } });
+                    } else {
+                        dispatch({ type: 'ADD_BUDGET', payload: { ...budgetData, id: 'b_' + Date.now() } });
+                    }
+                    setBLimit('');
+                    setShowAddBudget(false);
+                } catch (err) {
+                    alert(err.message);
+                }
+            };
+
+            const handleAddGoalSubmit = (e) => {
+                e.preventDefault();
+                if (!gName || !gTarget) return;
+
+                dispatch({
+                    type: 'ADD_GOAL',
+                    payload: {
+                        id: 'g_' + Date.now(),
+                        name: gName,
+                        target: parseFloat(gTarget),
+                        current: parseFloat(gCurrent || 0)
+                    }
+                });
+                setGName('');
+                setGTarget('');
+                setGCurrent('');
+                setShowAddGoal(false);
+            };
+
+            const handleUpdateGoalCurrent = (id, newAmt) => {
+                dispatch({
+                    type: 'UPDATE_GOAL',
+                    payload: { id, current: newAmt }
+                });
+            };
+
+            const handleDeleteBudget = async (id) => {
+                if (confirm('Delete this budget limit?')) {
+                    try {
+                        if (state.apiUrl && state.token) {
+                            await apiRequest(`/api/budgets/${id}`, { method: 'DELETE' });
+                        }
+                        dispatch({ type: 'DELETE_BUDGET', payload: id });
+                    } catch (err) {
+                        alert(err.message);
+                    }
+                }
+            };
+
+            const categoriesList = ['Rent & Housing', 'Groceries', 'Dining Out', 'Shopping', 'Transport', 'Entertainment', 'Software/Subscriptions', 'Utilities', 'Health', 'Insurance', 'Other'];
+
+            const upcomingBills = [
+                { name: 'AWS Infrastructure Server', amount: 45.00, dueDate: 'July 12', paid: false },
+                { name: 'Equinox Gym Facility', amount: 150.00, dueDate: 'July 15', paid: true },
+                { name: 'Apple One Cloud Subscription', amount: 32.95, dueDate: 'July 18', paid: false },
+                { name: 'Adobe Creative Suite', amount: 54.99, dueDate: 'July 22', paid: false }
+            ];
+
+            return (
+                <div>
+                    <div className="header">
+                        <div className="header-title">
+                            <h1>Budgets & Wealth Acceleration Goals</h1>
+                            <p>Maintain control over capital allocations and track savings landmarks</p>
+                        </div>
+                        <div className="header-actions">
+                            <button className="btn btn-secondary" onClick={() => setShowAddBudget(true)}>
+                                <i className="fa-solid fa-plus"></i> Configure Budget
+                            </button>
+                            <button className="btn btn-primary" onClick={() => setShowAddGoal(true)}>
+                                <i className="fa-solid fa-bullseye"></i> Set Savings Goal
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="glass-card" style={{ marginBottom: '32px' }}>
+                        <div className="card-title-bar">
+                            <h3><i className="fa-solid fa-scale-balanced"></i> Active Capital Budgets</h3>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+                            {state.budgets.length === 0 ? (
+                                <p style={{ color: 'var(--text-secondary)' }}>No active expense budgets created yet.</p>
+                            ) : (
+                                state.budgets.map(b => {
+                                    const spent = state.transactions
+                                        .filter(t => t.type === 'expense' && t.category === b.category)
+                                        .reduce((sum, t) => sum + t.amount, 0);
+                                    const pct = Math.min(100, Math.round((spent / b.limit) * 100));
+                                    const color = pct > 90 ? 'red' : pct > 75 ? 'yellow' : 'green';
+
+                                    return (
+                                        <div key={b.id} style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                                            <div className="budget-info-row" style={{ marginBottom: '10px' }}>
+                                                <span className="budget-cat" style={{ fontSize: '14px' }}>{b.category}</span>
+                                                <button className="btn btn-secondary btn-sm" style={{ padding: '2px 6px', color: 'var(--danger)', borderColor: 'transparent' }} onClick={() => handleDeleteBudget(b.id)}>
+                                                    <i className="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                            <div className="budget-info-row">
+                                                <span className="budget-val" style={{ fontSize: '13px' }}>{state.currency}{spent.toLocaleString()} / <strong>{state.currency}{b.limit}</strong></span>
+                                                <span style={{ fontSize: '13px', fontWeight: 600, color: `var(--${color === 'red' ? 'danger' : color === 'yellow' ? 'warning' : 'success'})` }}>
+                                                    {pct}% used
+                                                </span>
+                                            </div>
+                                            <div className="progress-track" style={{ marginTop: '8px' }}>
+                                                <div className={`progress-fill ${color}`} style={{ width: `${pct}%` }}></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </div>
+
+                    <div style={{ marginBottom: '32px' }}>
+                        <div className="card-title-bar">
+                            <h3><i className="fa-solid fa-vault"></i> Savings & Investment Goals</h3>
+                        </div>
+                        <div className="savings-goal-grid">
+                            {state.savingsGoals.map(g => (
+                                <SavingsGoalRing key={g.id} goal={g} onSave={handleUpdateGoalCurrent} />
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="glass-card">
+                        <div className="card-title-bar">
+                            <h3><i className="fa-solid fa-calendar-days"></i> Upcoming Reoccurring Subscriptions</h3>
+                        </div>
+                        <div className="bills-grid">
+                            {upcomingBills.map((bill, idx) => (
+                                <div key={idx} className={`glass-card bill-card ${bill.paid ? 'paid' : 'due'}`}>
+                                    <div className="bill-due-date">{bill.dueDate}</div>
+                                    <div className="bill-name">{bill.name}</div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
+                                        <div className="bill-amount">{state.currency}{bill.amount}</div>
+                                        <span className="tx-tag" style={{ color: bill.paid ? 'var(--success)' : 'var(--warning)', background: bill.paid ? 'var(--success-glow)' : 'var(--warning-glow)' }}>
+                                            {bill.paid ? 'Paid' : 'Unpaid'}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {showAddBudget && (
+                        <div className="modal-overlay">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h3>Allocate New Budget Limit</h3>
+                                    <button className="modal-close" onClick={() => setShowAddBudget(false)}><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <form onSubmit={handleAddBudgetSubmit}>
+                                    <div className="modal-body">
+                                        <div className="form-group">
+                                            <label className="form-label">Category</label>
+                                            <select className="form-control" value={bCategory} onChange={e => setBCategory(e.target.value)}>
+                                                {categoriesList.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Monthly Limit Allocation ({state.currency})</label>
+                                            <input type="number" required className="form-control" placeholder="0.00" value={bLimit} onChange={e => setBLimit(e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button type="button" className="btn btn-secondary" onClick={() => setShowAddBudget(false)}>Cancel</button>
+                                        <button type="submit" className="btn btn-primary">Establish Limit</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {showAddGoal && (
+                        <div className="modal-overlay">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h3>Construct Savings Goal Target</h3>
+                                    <button className="modal-close" onClick={() => setShowAddGoal(false)}><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <form onSubmit={handleAddGoalSubmit}>
+                                    <div className="modal-body">
+                                        <div className="form-group">
+                                            <label className="form-label">Goal Label / Purchase Target</label>
+                                            <input type="text" required className="form-control" placeholder="e.g. Retirement Vault" value={gName} onChange={e => setGName(e.target.value)} />
+                                        </div>
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label className="form-label">Target Accumulation ({state.currency})</label>
+                                                <input type="number" required className="form-control" placeholder="10000" value={gTarget} onChange={e => setGTarget(e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label className="form-label">Initial Seed Funding ({state.currency})</label>
+                                                <input type="number" className="form-control" placeholder="0" value={gCurrent} onChange={e => setGCurrent(e.target.value)} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button type="button" className="btn btn-secondary" onClick={() => setShowAddGoal(false)}>Cancel</button>
+                                        <button type="submit" className="btn btn-primary">Define Goal</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // --- View Component: Credit & EMIs Tracker ---
+        function CreditView() {
+            const { state, dispatch, apiRequest } = useContext(ExpenseContext);
+            const [showAddCC, setShowAddCC] = useState(false);
+            const [showAddEMI, setShowAddEMI] = useState(false);
+
+            const [ccName, setCCName] = useState('');
+            const [ccLimit, setCCLimit] = useState('');
+            const [ccBalance, setCCBalance] = useState('');
+            const [ccDueDate, setCCDueDate] = useState('');
+
+            const [eName, setEName] = useState('');
+            const [eTotal, setETotal] = useState('');
+            const [eMonthly, setEMonthly] = useState('');
+            const [ePaidTerms, setEPaidTerms] = useState('0');
+            const [eTotalTerms, setETotalTerms] = useState('12');
+            const [eInterest, setEInterest] = useState('0');
+
+            const handleAddCCSubmit = async (e) => {
+                e.preventDefault();
+                if (!ccName || !ccLimit) return;
+                const ccData = {
+                    name: ccName,
+                    limit: parseFloat(ccLimit),
+                    balance: parseFloat(ccBalance || 0),
+                    dueDate: ccDueDate || '2026-07-28'
+                };
+
+                try {
+                    if (state.apiUrl && state.token) {
+                        const saved = await apiRequest('/api/credit-cards', {
+                            method: 'POST',
+                            body: JSON.stringify(ccData)
+                        });
+                        dispatch({ type: 'ADD_CREDIT_CARD', payload: { ...saved, id: saved._id } });
+                    } else {
+                        dispatch({ type: 'ADD_CREDIT_CARD', payload: { ...ccData, id: 'c_' + Date.now() } });
+                    }
+                    setCCName('');
+                    setCCLimit('');
+                    setCCBalance('');
+                    setCCDueDate('');
+                    setShowAddCC(false);
+                } catch (err) {
+                    alert(err.message);
+                }
+            };
+
+            const handleAddEMISubmit = async (e) => {
+                e.preventDefault();
+                if (!eName || !eTotal || !eMonthly) return;
+                const emiData = {
+                    name: eName,
+                    totalAmount: parseFloat(eTotal),
+                    monthlyPayment: parseFloat(eMonthly),
+                    paidTerms: parseInt(ePaidTerms),
+                    totalTerms: parseInt(eTotalTerms),
+                    interestRate: parseFloat(eInterest || 0)
+                };
+
+                try {
+                    if (state.apiUrl && state.token) {
+                        const saved = await apiRequest('/api/emis', {
+                            method: 'POST',
+                            body: JSON.stringify(emiData)
+                        });
+                        dispatch({ type: 'ADD_EMI', payload: { ...saved, id: saved._id } });
+                    } else {
+                        dispatch({ type: 'ADD_EMI', payload: { ...emiData, id: 'e_' + Date.now() } });
+                    }
+                    setEName('');
+                    setETotal('');
+                    setEMonthly('');
+                    setEPaidTerms('0');
+                    setETotalTerms('12');
+                    setEInterest('0');
+                    setShowAddEMI(false);
+                } catch (err) {
+                    alert(err.message);
+                }
+            };
+
+            const handlePayCard = async (id, name, currentBalance) => {
+                const amtStr = prompt(`Enter payment amount to credit statement of ${name}:`, currentBalance);
+                if (amtStr && !isNaN(amtStr)) {
+                    const amount = parseFloat(amtStr);
+                    try {
+                        if (state.apiUrl && state.token) {
+                            await apiRequest(`/api/credit-cards/${id}/pay`, {
+                                method: 'PUT',
+                                body: JSON.stringify({ amount })
+                            });
+                        }
+                        dispatch({ type: 'PAY_CREDIT_CARD', payload: { id, name, amount } });
+                    } catch (err) {
+                        alert(err.message);
+                    }
+                }
+            };
+
+            const handlePayEMI = async (id, name, monthlyPayment) => {
+                if (confirm(`Approve monthly payment transaction of ${state.currency}${monthlyPayment} for ${name}?`)) {
+                    try {
+                        if (state.apiUrl && state.token) {
+                            await apiRequest(`/api/emis/${id}/pay`, { method: 'PUT' });
+                        }
+                        dispatch({ type: 'PAY_EMI', payload: { id, name, amount: monthlyPayment } });
+                    } catch (err) {
+                        alert(err.message);
+                    }
+                }
+            };
+
+            return (
+                <div>
+                    <div className="header">
+                        <div className="header-title">
+                            <h1>Lines of Credit & Amortization</h1>
+                            <p>Control credit utilization margins and monitor long-term debt payoff vectors</p>
+                        </div>
+                        <div className="header-actions">
+                            <button className="btn btn-secondary" onClick={() => setShowAddCC(true)}>
+                                <i className="fa-solid fa-plus"></i> Connect Credit Line
+                            </button>
+                            <button className="btn btn-primary" onClick={() => setShowAddEMI(true)}>
+                                <i className="fa-solid fa-landmark"></i> Register Loan/EMI
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="card-title-bar">
+                        <h3><i className="fa-solid fa-credit-card"></i> Credit Card Utilization</h3>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+                        {state.creditCards.map(c => {
+                            const pct = Math.min(100, Math.round((c.balance / c.limit) * 100));
+                            const color = pct > 40 ? 'red' : pct > 20 ? 'yellow' : 'green';
+                            return (
+                                <div key={c.id} className="glass-card calculator-card">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <strong style={{ fontSize: '15px' }}>{c.name}</strong>
+                                        <button className="btn btn-secondary btn-sm" onClick={() => handlePayCard(c.id, c.name, c.balance)}>
+                                            Pay Card
+                                        </button>
+                                    </div>
+                                    <div className="cc-outstanding-val">{state.currency}{c.balance.toLocaleString()}</div>
+                                    <div className="cc-details-row">
+                                        <span>Utilized: {pct}%</span>
+                                        <span>Limit: {state.currency}{c.limit.toLocaleString()}</span>
+                                    </div>
+                                    <div className="progress-track" style={{ marginTop: '8px', height: '4px' }}>
+                                        <div className={`progress-fill ${color}`} style={{ width: `${pct}%` }}></div>
+                                    </div>
+                                    <div className="cc-details-row" style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                        <span>Statement Due Date: {c.dueDate}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="card-title-bar">
+                        <h3><i className="fa-solid fa-clock"></i> EMI & Loan Payoffs</h3>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+                        {state.emis.length === 0 ? (
+                            <p style={{ color: 'var(--text-secondary)' }}>No active EMI loans tracked.</p>
+                        ) : (
+                            state.emis.map(e => {
+                                const remainingTerms = e.totalTerms - e.paidTerms;
+                                const remainingAmount = remainingTerms * e.monthlyPayment;
+                                const pctPaid = Math.round((e.paidTerms / e.totalTerms) * 100);
+                                return (
+                                    <div key={e.id} className="glass-card calculator-card">
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <strong style={{ fontSize: '15px' }}>{e.name}</strong>
+                                            {remainingTerms > 0 ? (
+                                                <button className="btn btn-primary btn-sm" onClick={() => handlePayEMI(e.id, e.name, e.monthlyPayment)}>
+                                                    Pay Bill
+                                                </button>
+                                            ) : (
+                                                <span className="tx-tag" style={{ color: 'var(--success)', background: 'var(--success-glow)' }}>Fulfilled</span>
+                                            )}
+                                        </div>
+                                        <div className="cc-outstanding-val" style={{ fontSize: '22px' }}>
+                                            {state.currency}{remainingAmount.toLocaleString()}
+                                            <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)', marginLeft: '8px' }}>remaining</span>
+                                        </div>
+                                        <div className="cc-details-row">
+                                            <span>Installment: {state.currency}{e.monthlyPayment}/mo</span>
+                                            <span>Terms: {e.paidTerms} / {e.totalTerms} paid ({pctPaid}%)</span>
+                                        </div>
+                                        <div className="progress-track" style={{ marginTop: '8px', height: '4px' }}>
+                                            <div className="progress-fill green" style={{ width: `${pctPaid}%` }}></div>
+                                        </div>
+                                        <div className="cc-details-row" style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                                            <span>Annualized Rate: {e.interestRate}% APR</span>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+
+                    {showAddCC && (
+                        <div className="modal-overlay">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h3>Register Credit Line Account</h3>
+                                    <button className="modal-close" onClick={() => setShowAddCC(false)}><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <form onSubmit={handleAddCCSubmit}>
+                                    <div className="modal-body">
+                                        <div className="form-group">
+                                            <label className="form-label">Card Label / Institution</label>
+                                            <input type="text" required className="form-control" placeholder="e.g. Vercel Black Card" value={ccName} onChange={e => setCCName(e.target.value)} />
+                                        </div>
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label className="form-label">Total Credit Limit ({state.currency})</label>
+                                                <input type="number" required className="form-control" placeholder="10000" value={ccLimit} onChange={e => setCCLimit(e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label className="form-label">Outstanding Statement Balance ({state.currency})</label>
+                                                <input type="number" className="form-control" placeholder="0" value={ccBalance} onChange={e => setCCBalance(e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Statement Due Date</label>
+                                            <input type="date" className="form-control" value={ccDueDate} onChange={e => setCCDueDate(e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button type="button" className="btn btn-secondary" onClick={() => setShowAddCC(false)}>Cancel</button>
+                                        <button type="submit" className="btn btn-primary">Link Account</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {showAddEMI && (
+                        <div className="modal-overlay">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h3>Track New Loan / Installment</h3>
+                                    <button className="modal-close" onClick={() => setShowAddEMI(false)}><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <form onSubmit={handleAddEMISubmit}>
+                                    <div className="modal-body">
+                                        <div className="form-group">
+                                            <label className="form-label">Asset / Loan Description</label>
+                                            <input type="text" required className="form-control" placeholder="e.g. Tesla Model Y Financing" value={eName} onChange={e => setEName(e.target.value)} />
+                                        </div>
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label className="form-label">Principal Amount ({state.currency})</label>
+                                                <input type="number" required className="form-control" placeholder="30000" value={eTotal} onChange={e => setETotal(e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label className="form-label">Monthly Installment ({state.currency})</label>
+                                                <input type="number" required className="form-control" placeholder="500" value={eMonthly} onChange={e => setEMonthly(e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label className="form-label">Installments Paid</label>
+                                                <input type="number" className="form-control" placeholder="0" value={ePaidTerms} onChange={e => setEPaidTerms(e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label className="form-label">Total Terms (Months)</label>
+                                                <input type="number" className="form-control" placeholder="60" value={eTotalTerms} onChange={e => setETotalTerms(e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Annualized Interest Rate (%)</label>
+                                            <input type="number" step="0.1" className="form-control" placeholder="0" value={eInterest} onChange={e => setEInterest(e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button type="button" className="btn btn-secondary" onClick={() => setShowAddEMI(false)}>Cancel</button>
+                                        <button type="submit" className="btn btn-primary">Define Installment</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // --- View Component: Splitwise Integrated Module ---
+        function SplitwiseView() {
+            const { state, dispatch, splitwiseBalances, apiRequest } = useContext(ExpenseContext);
+            const [selectedGroup, setSelectedGroup] = useState(null);
+            const [selectedFriend, setSelectedFriend] = useState(null);
+            const [showAddFriend, setShowAddFriend] = useState(false);
+            const [showAddGroup, setShowAddGroup] = useState(false);
+            const [showAddExpense, setShowAddExpense] = useState(false);
+
+            const [fName, setFName] = useState('');
+            const [fEmail, setFEmail] = useState('');
+            const [gName, setGName] = useState('');
+            const [gDesc, setGDesc] = useState('');
+            const [gMembers, setGMembers] = useState(['user_0']);
+
+            const [seDesc, setSEDesc] = useState('');
+            const [seAmt, setSEAmt] = useState('');
+            const [sePayer, setSEPayer] = useState('user_0');
+
+            const handleAddFriend = async (e) => {
+                e.preventDefault();
+                if (!fName) return;
+                const friendData = { name: fName, email: fEmail };
+
+                try {
+                    if (state.apiUrl && state.token) {
+                        const saved = await apiRequest('/api/splitwise/friends', {
+                            method: 'POST',
+                            body: JSON.stringify(friendData)
+                        });
+                        dispatch({ type: 'ADD_FRIEND', payload: { ...saved, id: saved._id } });
+                    } else {
+                        dispatch({ type: 'ADD_FRIEND', payload: { ...friendData, id: 'f_' + Date.now() } });
+                    }
+                    setFName('');
+                    setFEmail('');
+                    setShowAddFriend(false);
+                } catch (err) {
+                    alert(err.message);
+                }
+            };
+
+            const handleAddGroup = async (e) => {
+                e.preventDefault();
+                if (!gName) return;
+                const groupData = { name: gName, desc: gDesc, members: gMembers };
+
+                try {
+                    if (state.apiUrl && state.token) {
+                        const saved = await apiRequest('/api/splitwise/groups', {
+                            method: 'POST',
+                            body: JSON.stringify(groupData)
+                        });
+                        dispatch({ type: 'ADD_GROUP', payload: { ...saved, id: saved._id } });
+                    } else {
+                        dispatch({ type: 'ADD_GROUP', payload: { ...groupData, id: 'gr_' + Date.now() } });
+                    }
+                    setGName('');
+                    setGDesc('');
+                    setGMembers(['user_0']);
+                    setShowAddGroup(false);
+                } catch (err) {
+                    alert(err.message);
+                }
+            };
+
+            const handleAddSharedExpense = async (e) => {
+                e.preventDefault();
+                if (!seDesc || !seAmt || !selectedGroup) return;
+
+                const amount = parseFloat(seAmt);
+                const activeGroup = state.groups.find(g => g.id === selectedGroup);
+                const count = activeGroup.members.length;
+                const shareAmount = amount / count;
+
+                const splits = activeGroup.members.map(mId => ({
+                    memberId: mId,
+                    share: shareAmount
+                }));
+
+                const expenseData = {
+                    groupId: selectedGroup,
+                    desc: seDesc,
+                    amount,
+                    paidBy: sePayer,
+                    splits,
+                    date: new Date().toISOString().split('T')[0]
+                };
+
+                try {
+                    if (state.apiUrl && state.token) {
+                        const saved = await apiRequest('/api/splitwise/expenses', {
+                            method: 'POST',
+                            body: JSON.stringify(expenseData)
+                        });
+                        dispatch({ type: 'ADD_SHARED_EXPENSE', payload: { ...saved, id: saved._id } });
+                    } else {
+                        dispatch({ type: 'ADD_SHARED_EXPENSE', payload: { ...expenseData, id: 'se_' + Date.now() } });
+                    }
+                    setSEDesc('');
+                    setSEAmt('');
+                    setSEPayer('user_0');
+                    setShowAddExpense(false);
+                } catch (err) {
+                    alert(err.message);
+                }
+            };
+
+            const handleSettleDebt = async (debtorId, creditorId, amount) => {
+                const setData = {
+                    fromId: debtorId,
+                    toId: creditorId,
+                    amount,
+                    date: new Date().toISOString().split('T')[0]
+                };
+
+                try {
+                    if (state.apiUrl && state.token) {
+                        const saved = await apiRequest('/api/splitwise/settlements', {
+                            method: 'POST',
+                            body: JSON.stringify(setData)
+                        });
+                        dispatch({ type: 'ADD_SETTLEMENT', payload: { ...saved, id: saved._id } });
+                    } else {
+                        dispatch({ type: 'ADD_SETTLEMENT', payload: { ...setData, id: 's_' + Date.now() } });
+                    }
+                } catch (err) {
+                    alert(err.message);
+                }
+            };
+
+            const getMemberName = (id) => {
+                if (id === 'user_0') return 'You (Me)';
+                const f = state.friends.find(friend => friend.id === id);
+                return f ? f.name : 'Unknown Friend';
+            };
+
+            const groupSimplification = useMemo(() => {
+                if (!selectedGroup) return [];
+                const activeGroup = state.groups.find(g => g.id === selectedGroup);
+                if (!activeGroup) return [];
+
+                const groupBalances = {};
+                activeGroup.members.forEach(mId => { groupBalances[mId] = 0; });
+
+                state.sharedExpenses.forEach(exp => {
+                    if (exp.groupId === selectedGroup) {
+                        const payer = exp.paidBy;
+                        exp.splits.forEach(split => {
+                            const debtor = split.memberId;
+                            if (debtor !== payer) {
+                                groupBalances[debtor] -= split.share;
+                                groupBalances[payer] += split.share;
+                            }
+                        });
+                    }
+                });
+
+                state.settlements.forEach(set => {
+                    if (groupBalances[set.fromId] !== undefined && groupBalances[set.toId] !== undefined) {
+                        groupBalances[set.fromId] += set.amount;
+                        groupBalances[set.toId] -= set.amount;
+                    }
+                });
+
+                let debtors = [];
+                let creditors = [];
+                Object.keys(groupBalances).forEach(id => {
+                    let bal = groupBalances[id];
+                    if (bal < -0.01) debtors.push({ id, amount: -bal });
+                    else if (bal > 0.01) creditors.push({ id, amount: bal });
+                });
+
+                let simplified = [];
+                let i = 0, j = 0;
+                debtors.sort((a,b) => b.amount - a.amount);
+                creditors.sort((a,b) => b.amount - a.amount);
+
+                while (i < debtors.length && j < creditors.length) {
+                    let debtor = debtors[i];
+                    let creditor = creditors[j];
+                    let payAmt = Math.min(debtor.amount, creditor.amount);
+
+                    simplified.push({
+                        from: debtor.id,
+                        to: creditor.id,
+                        amount: payAmt
+                    });
+
+                    debtor.amount -= payAmt;
+                    creditor.amount -= payAmt;
+                    if (debtor.amount < 0.01) i++;
+                    if (creditor.amount < 0.01) j++;
+                }
+
+                return { simplified, groupBalances };
+            }, [selectedGroup, state.sharedExpenses, state.settlements, state.groups]);
+
+            return (
+                <div>
+                    <div className="header">
+                        <div className="header-title">
+                            <h1>Splitwise Accounting Module</h1>
+                            <p>Settle balances, partition bills, and simplify inter-peer debt structures</p>
+                        </div>
+                    </div>
+
+                    <div className="splitwise-layout">
+                        <div className="split-sidebar">
+                            <div>
+                                <div className="split-list-title">
+                                    <span>Shared Groups</span>
+                                    <button className="btn btn-secondary btn-sm" style={{ padding: '2px 8px' }} onClick={() => setShowAddGroup(true)}>
+                                        <i className="fa-solid fa-plus"></i> New
+                                    </button>
+                                </div>
+                                <div className="split-list">
+                                    {state.groups.map(g => (
+                                        <button
+                                            key={g.id}
+                                            className={`split-list-item ${selectedGroup === g.id ? 'active' : ''}`}
+                                            onClick={() => { setSelectedGroup(g.id); setSelectedFriend(null); }}
+                                        >
+                                            <span className="split-item-name"><i className="fa-solid fa-users"></i> {g.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <div className="split-list-title">
+                                    <span>Peer Directory</span>
+                                    <button className="btn btn-secondary btn-sm" style={{ padding: '2px 8px' }} onClick={() => setShowAddFriend(true)}>
+                                        <i className="fa-solid fa-user-plus"></i> Add
+                                    </button>
+                                </div>
+                                <div className="split-list">
+                                    {state.friends.map(f => {
+                                        const bal = splitwiseBalances[f.id] || 0;
+                                        const tagClass = bal > 0 ? 'owes-you' : bal < 0 ? 'you-owe' : 'settled';
+                                        const tagText = bal > 0 ? `owes ${state.currency}${bal.toFixed(0)}` : bal < 0 ? `you owe ${state.currency}${Math.abs(bal).toFixed(0)}` : 'settled';
+
+                                        return (
+                                            <button
+                                                key={f.id}
+                                                className={`split-list-item ${selectedFriend === f.id ? 'active' : ''}`}
+                                                onClick={() => { setSelectedFriend(f.id); setSelectedGroup(null); }}
+                                            >
+                                                <span className="split-item-name"><i className="fa-solid fa-user"></i> {f.name}</span>
+                                                <span className={`split-balance-tag ${tagClass}`}>{tagText}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="split-main">
+                            {selectedGroup ? (
+                                <div>
+                                    <div className="split-detail-header">
+                                        <div className="split-detail-title">
+                                            <h2>{state.groups.find(g => g.id === selectedGroup).name}</h2>
+                                            <div className="split-detail-subtitle">
+                                                {state.groups.find(g => g.id === selectedGroup).desc} • Members: {state.groups.find(g => g.id === selectedGroup).members.map(m => getMemberName(m)).join(', ')}
+                                            </div>
+                                        </div>
+                                        <button className="btn btn-primary" onClick={() => setShowAddExpense(true)}>
+                                            <i className="fa-solid fa-file-invoice-dollar"></i> Share Expense
+                                        </button>
+                                    </div>
+
+                                    <div className="split-group-balances">
+                                        {Object.keys(groupSimplification.groupBalances || {}).map(mId => {
+                                            const bal = groupSimplification.groupBalances[mId];
+                                            return (
+                                                <div key={mId} className="glass-card balance-card" style={{ borderLeft: `4px solid ${bal > 0 ? 'var(--success)' : bal < 0 ? 'var(--danger)' : 'var(--border-color)'}` }}>
+                                                    <div className="balance-card-lbl">{getMemberName(mId)}</div>
+                                                    <div className="balance-card-val" style={{ color: bal > 0 ? 'var(--success)' : bal < 0 ? 'var(--danger)' : 'var(--text-primary)' }}>
+                                                        {bal > 0 ? '+' : '-'}{state.currency}{Math.abs(bal).toFixed(2)}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {groupSimplification.simplified && groupSimplification.simplified.length > 0 && (
+                                        <div className="glass-card debt-simplification-card">
+                                            <div className="debt-simplification-title">
+                                                <i className="fa-solid fa-wand-magic-sparkles"></i>
+                                                <span>Net Settlement Pathways (Simplified Debts)</span>
+                                            </div>
+                                            <div className="debt-list">
+                                                {groupSimplification.simplified.map((sim, idx) => (
+                                                    <div key={idx} className="debt-arrow" style={{ justifyContent: 'space-between' }}>
+                                                        <span>{getMemberName(sim.from)} owes {getMemberName(sim.to)} {state.currency}{sim.amount.toFixed(2)}</span>
+                                                        {(sim.from === 'user_0' || sim.to === 'user_0') && (
+                                                            <button
+                                                                className="btn btn-secondary btn-sm"
+                                                                onClick={() => handleSettleDebt(sim.from, sim.to, sim.amount)}
+                                                            >
+                                                                Record Settlement
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="card-title-bar">
+                                        <h3>Shared Group Expense Logs</h3>
+                                    </div>
+                                    <div className="transaction-list">
+                                        {state.sharedExpenses.filter(e => e.groupId === selectedGroup).map(exp => (
+                                            <div className="transaction-row" key={exp.id}>
+                                                <div className="tx-info">
+                                                    <div className="tx-icon-wrapper"><i className="fa-solid fa-file-invoice"></i></div>
+                                                    <div className="tx-details">
+                                                        <span className="tx-desc">{exp.desc}</span>
+                                                        <div className="tx-meta">
+                                                            <span>Paid by: <strong>{getMemberName(exp.paidBy)}</strong></span>
+                                                            <span>{exp.date}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <span className="tx-amount" style={{ color: 'var(--text-primary)' }}>
+                                                    {state.currency}{exp.amount.toFixed(2)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : selectedFriend ? (
+                                <div>
+                                    <div className="split-detail-header">
+                                        <div className="split-detail-title">
+                                            <h2>{state.friends.find(f => f.id === selectedFriend).name}</h2>
+                                            <div className="split-detail-subtitle">{state.friends.find(f => f.id === selectedFriend).email}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="glass-card" style={{ marginBottom: '24px' }}>
+                                        <h3 style={{ fontSize: '15px', marginBottom: '12px' }}>Direct Settlement Actions</h3>
+                                        {splitwiseBalances[selectedFriend] > 0 ? (
+                                            <div>
+                                                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                                    <strong>{getMemberName(selectedFriend)}</strong> owes you a direct net balance of <strong>{state.currency}{splitwiseBalances[selectedFriend].toFixed(2)}</strong>.
+                                                </p>
+                                                <button className="btn btn-primary" style={{ marginTop: '12px' }} onClick={() => handleSettleDebt(selectedFriend, 'user_0', splitwiseBalances[selectedFriend])}>
+                                                    Record Paid Settlement
+                                                </button>
+                                            </div>
+                                        ) : splitwiseBalances[selectedFriend] < 0 ? (
+                                            <div>
+                                                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                                    You owe <strong>{getMemberName(selectedFriend)}</strong> a direct net balance of <strong>{state.currency}{Math.abs(splitwiseBalances[selectedFriend]).toFixed(2)}</strong>.
+                                                </p>
+                                                <button className="btn btn-danger" style={{ marginTop: '12px' }} onClick={() => handleSettleDebt('user_0', selectedFriend, Math.abs(splitwiseBalances[selectedFriend]))}>
+                                                    Submit Settlement Payment
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>All direct balances are settled with this peer.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60%', color: 'var(--text-secondary)' }}>
+                                    <i className="fa-solid fa-users" style={{ fontSize: '48px', color: 'var(--border-color)', marginBottom: '16px' }}></i>
+                                    <h3>Select a Group or Friend to Audit Balances</h3>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {showAddFriend && (
+                        <div className="modal-overlay">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h3>Insert Peer Directory Connection</h3>
+                                    <button className="modal-close" onClick={() => setShowAddFriend(false)}><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <form onSubmit={handleAddFriend}>
+                                    <div className="modal-body">
+                                        <div className="form-group">
+                                            <label className="form-label">Full Name</label>
+                                            <input type="text" required className="form-control" placeholder="e.g. Sarah Chen" value={fName} onChange={e => setFName(e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Email Address</label>
+                                            <input type="email" required className="form-control" placeholder="sarah@example.com" value={fEmail} onChange={e => setFEmail(e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button type="button" className="btn btn-secondary" onClick={() => setShowAddFriend(false)}>Cancel</button>
+                                        <button type="submit" className="btn btn-primary">Create Connection</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {showAddGroup && (
+                        <div className="modal-overlay">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h3>Initialize Shared Expense Group</h3>
+                                    <button className="modal-close" onClick={() => setShowAddGroup(false)}><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <form onSubmit={handleAddGroup}>
+                                    <div className="modal-body">
+                                        <div className="form-group">
+                                            <label className="form-label">Group Name</label>
+                                            <input type="text" required className="form-control" placeholder="e.g. Road Trip 2026" value={gName} onChange={e => setGName(e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Description</label>
+                                            <input type="text" className="form-control" placeholder="e.g. Summer drive costs partition" value={gDesc} onChange={e => setGDesc(e.target.value)} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Select Group Members</label>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border-color)', padding: '10px', borderRadius: '4px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <input type="checkbox" checked disabled />
+                                                    <span>You (Me)</span>
+                                                </div>
+                                                {state.friends.map(f => (
+                                                    <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={gMembers.includes(f.id)}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) {
+                                                                    setGMembers([...gMembers, f.id]);
+                                                                } else {
+                                                                    setGMembers(gMembers.filter(m => m !== f.id));
+                                                                }
+                                                            }}
+                                                        />
+                                                        <span>{f.name}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button type="button" className="btn btn-secondary" onClick={() => setShowAddGroup(false)}>Cancel</button>
+                                        <button type="submit" className="btn btn-primary">Form Group</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {showAddExpense && selectedGroup && (
+                        <div className="modal-overlay">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h3>Record Shared Group Expense</h3>
+                                    <button className="modal-close" onClick={() => setShowAddExpense(false)}><i className="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <form onSubmit={handleAddSharedExpense}>
+                                    <div className="modal-body">
+                                        <div className="form-group">
+                                            <label className="form-label">Expense Description</label>
+                                            <input type="text" required className="form-control" placeholder="e.g. Fuel Refill" value={seDesc} onChange={e => setSEDesc(e.target.value)} />
+                                        </div>
+                                        <div className="form-row">
+                                            <div className="form-group">
+                                                <label className="form-label">Total Amount ({state.currency})</label>
+                                                <input type="number" required step="0.01" className="form-control" placeholder="0.00" value={seAmt} onChange={e => setSEAmt(e.target.value)} />
+                                            </div>
+                                            <div className="form-group">
+                                                <label className="form-label">Paid By</label>
+                                                <select className="form-control" value={sePayer} onChange={e => setSEPayer(e.target.value)}>
+                                                    <option value="user_0">You (Me)</option>
+                                                    {state.groups.find(g => g.id === selectedGroup).members.filter(mId => mId !== 'user_0').map(mId => (
+                                                        <option key={mId} value={mId}>{getMemberName(mId)}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Split Configuration</label>
+                                            <select className="form-control" value="equal" disabled>
+                                                <option value="equal">Split Equally Among All Members</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button type="button" className="btn btn-secondary" onClick={() => setShowAddExpense(false)}>Cancel</button>
+                                        <button type="submit" className="btn btn-primary">Post Shared Expense</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // --- View Component: Calculators ---
+        function AnalyticsView() {
+            const { state } = useContext(ExpenseContext);
+            const [ciPrincipal, setCiPrincipal] = useState('10000');
+            const [ciRate, setCiRate] = useState('8');
+            const [ciYears, setCiYears] = useState('10');
+            const [ciMonthly, setCiMonthly] = useState('500');
+            const [ciResult, setCiResult] = useState(null);
+
+            const calculateCompoundInterest = (e) => {
+                e.preventDefault();
+                const P = parseFloat(ciPrincipal);
+                const r = parseFloat(ciRate) / 100 / 12;
+                const t = parseFloat(ciYears) * 12;
+                const PMT = parseFloat(ciMonthly);
+
+                const fvPrincipal = P * Math.pow(1 + r, t);
+                const fvContributions = PMT * ((Math.pow(1 + r, t) - 1) / r);
+                const totalWealth = fvPrincipal + fvContributions;
+                const totalContributions = P + (PMT * t);
+                const totalInterest = totalWealth - totalContributions;
+
+                setCiResult({
+                    totalWealth: Math.round(totalWealth),
+                    contributions: Math.round(totalContributions),
+                    interest: Math.round(totalInterest)
+                });
+            };
+
+            return (
+                <div>
+                    <div className="header">
+                        <div className="header-title">
+                            <h1>Financial Engineering Calculators</h1>
+                            <p>Simulate compounding assets, investment targets, and debt amortization tracks</p>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                        <div className="glass-card">
+                            <div className="card-title-bar">
+                                <h3><i className="fa-solid fa-chart-line"></i> Compound Wealth Simulator</h3>
+                            </div>
+                            <form onSubmit={calculateCompoundInterest}>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">Principal Seed ({state.currency})</label>
+                                        <input type="number" className="form-control" value={ciPrincipal} onChange={e => setCiPrincipal(e.target.value)} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Monthly Additions ({state.currency})</label>
+                                        <input type="number" className="form-control" value={ciMonthly} onChange={e => setCiMonthly(e.target.value)} />
+                                    </div>
+                                </div>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">Expected Growth APR (%)</label>
+                                        <input type="number" step="0.1" className="form-control" value={ciRate} onChange={e => setCiRate(e.target.value)} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Timeline Horizon (Years)</label>
+                                        <input type="number" className="form-control" value={ciYears} onChange={e => setCiYears(e.target.value)} />
+                                    </div>
+                                </div>
+                                <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Compute Compounding Projection</button>
+                            </form>
+
+                            {ciResult && (
+                                <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border-color)' }}>
+                                    <h4 style={{ marginBottom: '12px' }}>Compound Forecast:</h4>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', textAlign: 'center' }}>
+                                        <div style={{ background: 'var(--border-color)', padding: '12px', borderRadius: '8px' }}>
+                                            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>TOTAL VALUE</div>
+                                            <strong style={{ fontSize: '16px', color: 'var(--success)' }}>{state.currency}{ciResult.totalWealth.toLocaleString()}</strong>
+                                        </div>
+                                        <div style={{ background: 'var(--border-color)', padding: '12px', borderRadius: '8px' }}>
+                                            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>CONTRIBUTED</div>
+                                            <strong style={{ fontSize: '16px' }}>{state.currency}{ciResult.contributions.toLocaleString()}</strong>
+                                        </div>
+                                        <div style={{ background: 'var(--border-color)', padding: '12px', borderRadius: '8px' }}>
+                                            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>INTEREST EARNED</div>
+                                            <strong style={{ fontSize: '16px', color: 'var(--accent-secondary)' }}>{state.currency}{ciResult.interest.toLocaleString()}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="glass-card">
+                            <div className="card-title-bar">
+                                <h3><i className="fa-solid fa-graduation-cap"></i> Financial Independence (F.I.R.E) Rule</h3>
+                            </div>
+                            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                                The 4% Rule dictates that if you can withdraw 4% of your retirement nest egg annually without running out of money, you are Financially Independent.
+                            </p>
+                            <div style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.1), rgba(99,102,241,0.05))', padding: '16px', borderRadius: '12px', marginTop: '16px', border: '1px solid rgba(6,182,212,0.15)' }}>
+                                <strong style={{ fontSize: '14px', display: 'block', color: 'var(--accent-secondary)' }}>F.I.R.E Target Formula:</strong>
+                                <span style={{ fontSize: '18px', fontWeight: 700, display: 'block', marginTop: '6px', fontFamily: 'Outfit' }}>
+                                    Annual Expense Allocation × 25
+                                </span>
+                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '6px' }}>
+                                    If your annual expenses are {state.currency}45,000, your target nest egg is <strong>{state.currency}1,125,000</strong>.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- View Component: Settings ---
+        function SettingsView() {
+            const { state, dispatch, apiRequest } = useContext(ExpenseContext);
+            const [apiUrlInput, setApiUrlInput] = useState(state.apiUrl || '');
+
+            const handleReset = () => {
+                if (confirm('Reset ExpenseOS state to initial sandbox ledger? All custom entries will be lost.')) {
+                    dispatch({ type: 'RESET_DATA' });
+                }
+            };
+
+            const handleSaveSettings = async (e) => {
+                e.preventDefault();
+                dispatch({ type: 'SET_API_URL', payload: apiUrlInput.trim() });
+                alert('Backend API settings updated. The application will connect to the new endpoint.');
+            };
+
+            const handleCurrencyChange = async (e) => {
+                const newCurrency = e.target.value;
+                try {
+                    if (state.apiUrl && state.token) {
+                        await apiRequest('/api/auth/currency', {
+                            method: 'PUT',
+                            body: JSON.stringify({ currency: newCurrency })
+                        });
+                    }
+                    dispatch({ type: 'SET_CURRENCY', payload: newCurrency });
+                } catch (err) {
+                    alert(err.message);
+                }
+            };
+
+            const handleBackup = () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+                const dlAnchorElem = document.createElement('a');
+                dlAnchorElem.setAttribute("href", dataStr);
+                dlAnchorElem.setAttribute("download", `ExpenseOS_Backup_${new Date().toISOString().split('T')[0]}.json`);
+                dlAnchorElem.click();
+            };
+
+            const handleRestore = async (e) => {
+                const fileReader = new FileReader();
+                fileReader.onload = async event => {
+                    try {
+                        const parsed = JSON.parse(event.target.result);
+                        if (parsed.transactions && parsed.budgets) {
+                            if (state.apiUrl && state.token) {
+                                await apiRequest('/api/system/sync', {
+                                    method: 'POST',
+                                    body: JSON.stringify(parsed)
+                                });
+                            }
+                            dispatch({ type: 'SYNC_ALL_DATA', payload: parsed });
+                            alert('ExpenseOS system database restored successfully.');
+                        } else {
+                            alert('Invalid file format. State backup does not contain transactional fields.');
+                        }
+                    } catch (err) {
+                        alert('Error parsing uploaded backup file.');
+                    }
+                };
+                fileReader.readAsText(e.target.files[0]);
+            };
+
+            return (
+                <div>
+                    <div className="header">
+                        <div className="header-title">
+                            <h1>System Configuration</h1>
+                            <p>Control system integrity, database synchronization, and currency preferences</p>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+                        {/* API Config Card */}
+                        <div className="glass-card">
+                            <h3 style={{ fontSize: '16px', marginBottom: '12px' }}><i className="fa-solid fa-cloud-arrow-up"></i> Backend API Synchronizer</h3>
+                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
+                                Connect your Render backend and MongoDB Atlas. When empty, ExpenseOS executes inside the offline local browser sandbox.
+                            </p>
+                            <form onSubmit={handleSaveSettings}>
+                                <div className="form-group">
+                                    <label className="form-label">Backend API URL</label>
+                                    <input
+                                        type="url"
+                                        className="form-control"
+                                        placeholder="e.g. https://expense-os-api.onrender.com"
+                                        value={apiUrlInput}
+                                        onChange={e => setApiUrlInput(e.target.value)}
+                                    />
+                                </div>
+                                <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Connect & Save Endpoint</button>
+                            </form>
+                        </div>
+
+                        {/* Currency Preference Card */}
+                        <div className="glass-card">
+                            <h3 style={{ fontSize: '16px', marginBottom: '12px' }}><i className="fa-solid fa-coins"></i> Currency Settings</h3>
+                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
+                                Modify your regional currency formatting. Changes apply dynamically across all ledgers, budgets, and Splitwise shared structures.
+                            </p>
+                            <div className="form-group">
+                                <label className="form-label">Select Base Currency</label>
+                                <select className="form-control" value={state.currency} onChange={handleCurrencyChange}>
+                                    <option value="$">US Dollar ($)</option>
+                                    <option value="₹">Indian Rupee (₹)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Backup & Purge Card */}
+                        <div className="glass-card">
+                            <h3 style={{ fontSize: '16px', marginBottom: '12px' }}><i className="fa-solid fa-database"></i> Database Actions</h3>
+                            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>
+                                Download your ledger backups as JSON text files or load historical backups back into memory.
+                            </p>
+                            <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+                                <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={handleBackup}>
+                                    Backup DB
+                                </button>
+                                <label className="btn btn-secondary btn-sm" style={{ flex: 1, cursor: 'pointer', textAlign: 'center', justifyContent: 'center' }}>
+                                    Restore DB
+                                    <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleRestore} />
+                                </label>
+                            </div>
+                            <button className="btn btn-danger btn-sm" style={{ width: '100%' }} onClick={handleReset}>
+                                Reset Sandbox Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- Render Application Mount ---
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(
+            <ExpenseProvider>
+                <App />
+            </ExpenseProvider>
+        );
+    </script>
+</body>
+</html>
