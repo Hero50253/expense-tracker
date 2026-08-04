@@ -31,6 +31,7 @@ mongoose.connect(MONGODB_URI, {
 });
 
 // --- Register Routes ---
+app.use('/api/ocr', require('./routes/ocr'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api', require('./routes/api'));
 
@@ -54,7 +55,7 @@ app.use((err, req, res, next) => {
 });
 
 // --- Start Server ---
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const PORT = process.env.PORT || 5002;
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`ExpenseOS server is executing on port ${PORT}`);
 });

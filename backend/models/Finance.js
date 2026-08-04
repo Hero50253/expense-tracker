@@ -9,7 +9,9 @@ const TransactionSchema = new mongoose.Schema({
     category: { type: String, required: true },
     method: { type: String, required: true },
     date: { type: String, required: true }, // Format: YYYY-MM-DD
-    recurring: { type: String, default: 'One-time' }
+    recurring: { type: String, default: 'One-time' },
+    source: { type: String, enum: ['manual','ocr','copilot','import','simulation'], default: 'manual' },
+    sourceMeta: { type: mongoose.Schema.Types.Mixed }
 });
 
 // --- Budget Model ---
@@ -57,7 +59,7 @@ const GroupSchema = new mongoose.Schema({
 // --- Splitwise Shared Expense Model ---
 const SharedExpenseSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group', required: true },
+    groupId: { type: String, required: true },
     desc: { type: String, required: true },
     amount: { type: Number, required: true },
     paidBy: { type: String, required: true }, // 'user_0' or friend ID

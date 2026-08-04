@@ -11,6 +11,9 @@ const {
     SharedExpense,
     Settlement
 } = require('../models/Finance');
+// New imports for AI Copilot and Forecast
+const fetch = require('node-fetch');
+
 
 // --- Transactions ---
 router.get('/transactions', auth, async (req, res) => {
@@ -252,6 +255,15 @@ router.get('/splitwise/expenses', auth, async (req, res) => {
 
 router.post('/splitwise/expenses', auth, async (req, res) => {
     try {
+        // Ensure user has at least one friend before allowing splitwise expense creation
+        const friendCount = await Friend.countDocuments({ userId: req.user.id });
+        if (friendCount === 0) {
+            return res.status(400).json({ message: 'Add at least one friend before creating a splitwise expense.' });
+        }
+        // Validate that members array is not empty
+        if (!req.body.members || req.body.members.length === 0) {
+            return res.status(400).json({ message: 'Splitwise expense must include at least one member.' });
+        }
         const newExpense = new SharedExpense({
             ...req.body,
             userId: req.user.id
@@ -260,6 +272,36 @@ router.post('/splitwise/expenses', auth, async (req, res) => {
         res.status(201).json(saved);
     } catch (err) {
         res.status(400).json({ message: 'Error posting shared expense' });
+    }
+});
+
+router.delete('/splitwise/expenses/:id', auth, async (req, res) => {
+    try {
+        const exp = await SharedExpense.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+        if (!exp) return res.status(404).json({ message: 'Shared expense not found' });
+        res.json({ message: 'Shared expense removed' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error deleting shared expense' });
+    }
+});
+
+router.delete('/splitwise/friends/:id', auth, async (req, res) => {
+    try {
+        const friend = await Friend.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+        if (!friend) return res.status(404).json({ message: 'Friend not found' });
+        res.json({ message: 'Friend removed' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error deleting friend' });
+    }
+});
+
+router.delete('/splitwise/groups/:id', auth, async (req, res) => {
+    try {
+        const group = await Group.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+        if (!group) return res.status(404).json({ message: 'Group not found' });
+        res.json({ message: 'Group removed' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error deleting group' });
     }
 });
 
