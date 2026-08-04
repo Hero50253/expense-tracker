@@ -1,124 +1,125 @@
-# 💎 ExpenseOS — Billion-Dollar Personal Finance Platform
+# ExpenseOS
 
-> A minimalist, high-performance personal finance operating system built with React 18, Vite, Express, and MongoDB Atlas. Engineered with luxury slate aesthetics, Framer Motion micro-interactions, an integrated Splitwise engine, circular savings milestones, and AI financial intelligence.
-
----
-
-## ✨ Features & Architecture
-
-### ⚡ High-Frequency Transaction Ledger
-- **Instant Categorization**: Track income and expenses with automatic tag assignments, search filters, and date sorting.
-- **Persistent Cloud Sync**: Real-time synchronization with MongoDB Atlas backend on Port 3000.
-- **Offline Sandbox Fallback**: Automatic failover to local browser state when operating in offline mode.
-
-### 🤝 Automated Splitwise Engine
-- **Multi-Party Shared Groups**: Form custom shared groups (Vacations, Housemates, Dinners) and manage member balances.
-- **Automatic Bill Splitting**: Create shared group expenses with automatic equal share distribution among group members.
-- **Friends Net Balances**: Real-time net balance calculations (who owes whom) with color-coded balance badges.
-- **Settlement Recording**: One-click settlement payment tracking to clear debt balances between friends.
-
-### 📊 Category Caps & Savings Milestones
-- **Budget Spending Caps**: Set monthly budget thresholds per category with visual progress bars (`safe`, `warn`, `over-budget`).
-- **Circular Savings Rings**: Track visual SVG progress rings toward custom long-term savings goals.
-- **Credit Card & Financing Amortization**: Manage active credit card balances, due dates, and monthly EMI payment schedules.
-
-### 🧠 AI Intelligence & Command Palette
-- **Command Palette (`Cmd+K`)**: Instant keyboard shortcut modal for rapid navigation and searching across the platform.
-- **AI Chat Dock**: Built-in financial advisor for portfolio queries, spending habit audits, and savings strategy recommendations.
-- **Notifications Hub**: Dynamic top bar notification badge counter with one-click *"Mark all read"* functionality.
+A full-stack expense management and personal finance application built with React, Vite, Express, and MongoDB Atlas. Features include transaction tracking, category budgets, credit/EMI schedules, and a Splitwise bill-splitting engine.
 
 ---
 
-## 🛠️ Technology Stack
+## Features
 
-- **Frontend**: React 18, Vite, Framer Motion, Recharts, Bootstrap Icons, Google Fonts Inter, Vanilla Luxury CSS System
-- **Backend**: Node.js, Express.js, Mongoose (MongoDB Atlas), JWT Authentication, CORS, Dotenv
-- **Database**: MongoDB Atlas Cloud (`Cluster0`)
+### Transaction Management
+- Categorized income and expense logging with live search and filtering.
+- Automatic synchronization with MongoDB Atlas backend.
+- Fallback local storage state for offline usage.
+
+### Splitwise Engine
+- Shared group creation for splitting expenses among multiple members.
+- Automatic equal share calculations and net friend balance tracking.
+- Settlement recording to log payments between friends.
+
+### Budgets & Savings Tracking
+- Monthly category spending caps with visual progress status.
+- Circular progress indicators for savings goals.
+- Credit card balance tracking and financing EMI schedule management.
+
+### Interface & Tools
+- Keyboard shortcut command palette (`Cmd+K`) for fast navigation.
+- Financial chat assistant interface for spending queries.
+- Top bar notification bell with unread badge counter and clear-all controls.
 
 ---
 
-## 📁 Project Structure
+## Tech Stack
 
-```
+- **Frontend**: React 18, Vite, Framer Motion, Recharts, Bootstrap Icons, CSS
+- **Backend**: Node.js, Express.js, Mongoose, JWT Authentication
+- **Database**: MongoDB Atlas
+
+---
+
+## Project Structure
+
+```text
 expense-tracker/
 ├── backend/
 │   ├── models/
-│   │   ├── User.js            # JWT User Authentication Schema
-│   │   └── Finance.js         # Schemas for Transactions, Budgets, Credit Cards, EMIs, Splitwise
+│   │   ├── User.js            # User auth schema
+│   │   └── Finance.js         # Transaction, budget, credit card, EMI & Splitwise schemas
 │   ├── routes/
-│   │   ├── auth.js            # Register & Login JWT API Routes
-│   │   └── api.js             # Financial Data CRUD & Splitwise API Endpoints
-│   ├── server.js              # Express Server Entry Point (Port 3000)
-│   └── .env                   # Database URI & JWT Secret Configuration
+│   │   ├── auth.js            # Authentication routes
+│   │   └── api.js             # Financial & Splitwise endpoints
+│   └── server.js              # Express server setup (Port 3000)
 │
 └── frontend/
     ├── src/
-    │   ├── App.jsx            # Main React Application & State Reducer Engine
-    │   ├── index.css          # Luxury Slate System Tokens & Animations
-    │   └── main.tsx           # React DOM Mount Entry
-    ├── index.html             # Google Fonts Inter & Bootstrap Icons CDN
-    └── package.json           # Vite & Dependency Configuration
+    │   ├── App.jsx            # Main React application & state management
+    │   ├── index.css          # Styling & design system utilities
+    │   └── main.tsx           # Entry point
+    ├── index.html
+    └── package.json
 ```
 
 ---
 
-## 🚀 Quick Start Guide
+## Getting Started
 
-### 1. Prerequisites
-- **Node.js** (v18 or higher)
-- **npm** (v9 or higher)
-- **MongoDB Atlas Connection URI**
+### Prerequisites
+- Node.js (v18+)
+- npm (v9+)
+- MongoDB Atlas database URI
 
-### 2. Backend Setup
-```bash
-cd backend
-npm install
-```
+### Setup Instructions
 
-Create or verify the `backend/.env` file:
-```env
-PORT=3000
-MONGODB_URI=mongodb+srv://expenseos:NmFn3VyDZtikzdjG@cluster0.durptkd.mongodb.net/?appName=Cluster0
-JWT_SECRET=super_secret_jwt_hash_key_change_in_production
-NODE_ENV=development
-CLIENT_ORIGIN=http://localhost:5173,http://127.0.0.1:5173
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Hero50253/expense-tracker.git
+   cd expense-tracker
+   ```
 
-Start the backend dev server:
-```bash
-npm run dev
-```
-*Backend runs on `http://localhost:3000`*
+2. **Configure and start the Backend**
+   ```bash
+   cd backend
+   npm install
+   ```
+   Ensure `.env` contains:
+   ```env
+   PORT=3000
+   MONGODB_URI=mongodb+srv://expenseos:NmFn3VyDZtikzdjG@cluster0.durptkd.mongodb.net/?appName=Cluster0
+   JWT_SECRET=super_secret_jwt_hash_key_change_in_production
+   NODE_ENV=development
+   CLIENT_ORIGIN=http://localhost:5173,http://127.0.0.1:5173
+   ```
+   Start server:
+   ```bash
+   npm run dev
+   ```
 
-### 3. Frontend Setup
-Open a new terminal window:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-*Frontend app launches at `http://localhost:5173`*
+3. **Start the Frontend**
+   ```bash
+   cd ../frontend
+   npm install
+   npm run dev
+   ```
+   Open `http://localhost:5173` in your browser.
 
 ---
 
-## 📡 REST API Endpoint Reference
+## API Endpoints
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | Create a new user account |
-| `POST` | `/api/auth/login` | Authenticate user & return JWT token |
-| `GET` / `POST` / `DELETE` | `/api/transactions` | Manage user transaction records |
-| `GET` / `POST` / `DELETE` | `/api/budgets` | Manage category spending caps |
+| `POST` | `/api/auth/register` | Register new account |
+| `POST` | `/api/auth/login` | Log in and receive JWT token |
+| `GET` / `POST` / `DELETE` | `/api/transactions` | Manage transactions |
+| `GET` / `POST` / `DELETE` | `/api/budgets` | Manage category budgets |
 | `GET` / `POST` | `/api/credit-cards` | Manage credit card balances |
-| `GET` / `POST` | `/api/emis` | Manage financing EMI schedules |
-| `GET` / `POST` / `DELETE` | `/api/splitwise/friends` | Manage Splitwise friends list |
+| `GET` / `POST` | `/api/emis` | Manage EMI schedules |
+| `GET` / `POST` / `DELETE` | `/api/splitwise/friends` | Manage Splitwise friends |
 | `GET` / `POST` / `DELETE` | `/api/splitwise/groups` | Manage shared groups |
-| `GET` / `POST` / `DELETE` | `/api/splitwise/expenses` | Log multi-party shared bill expenses |
-| `GET` / `POST` | `/api/splitwise/settlements` | Record debt settlement payments |
+| `GET` / `POST` / `DELETE` | `/api/splitwise/expenses` | Manage shared group expenses |
+| `GET` / `POST` | `/api/splitwise/settlements` | Record debt settlements |
 
 ---
 
-## 📄 License
+## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
-
+This project is licensed under the MIT License.
