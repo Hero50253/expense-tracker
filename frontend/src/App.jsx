@@ -2788,41 +2788,43 @@ function StatementImportModal({ onClose }) {
 
         try {
             if (state.token && state.token !== 'offline_token') {
-                const formData = new FormData();
-                formData.append('file', file);
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
 
-                const res = await fetch(`${state.apiUrl}/api/import/statement-file`, {
-                    method: 'POST',
-                    headers: { 'x-auth-token': state.token },
-                    body: formData
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message || 'File upload failed');
-
-                setMsg(data.message);
-                if (data.transactions) {
-                    data.transactions.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
-                }
-            } else {
-                // Client-side text/CSV reader fallback
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const text = e.target.result;
-                    const parsed = clientParseStatementLines(text, 'PDF Bank Statement');
-                    if (parsed.length > 0) {
-                        parsed.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
-                        setMsg(`Extracted & imported ${parsed.length} transactions from ${file.name}!`);
-                    } else {
-                        setMsg(`Read file ${file.name}, but could not find clear amount fields.`);
+                    const res = await fetch(`${state.apiUrl}/api/import/statement-file`, {
+                        method: 'POST',
+                        headers: { 'x-auth-token': state.token },
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.transactions && data.transactions.length > 0) {
+                        setMsg(data.message);
+                        data.transactions.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
+                        setLoading(false);
+                        return;
                     }
-                    setLoading(false);
-                };
-                reader.readAsText(file);
-                return;
+                } catch (netErr) {
+                    console.warn('Backend file import unreachable, using client reader:', netErr);
+                }
             }
+
+            // Client-side text/CSV reader fallback
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                const parsed = clientParseStatementLines(text, 'PDF Bank Statement');
+                if (parsed.length > 0) {
+                    parsed.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
+                    setMsg(`Extracted & imported ${parsed.length} transactions from ${file.name}!`);
+                } else {
+                    setMsg(`Read file ${file.name}, but could not find clear amount fields.`);
+                }
+                setLoading(false);
+            };
+            reader.readAsText(file);
         } catch (err) {
             setMsg('Error reading statement file: ' + err.message);
-        } finally {
             setLoading(false);
         }
     };
@@ -2837,25 +2839,38 @@ function StatementImportModal({ onClose }) {
 
         try {
             if (state.token && state.token !== 'offline_token') {
-                const res = await apiRequest('/api/import/statement', {
-                    method: 'POST',
-                    body: JSON.stringify({ rawText, format })
-                });
-                setMsg(res.message);
-                if (res.transactions) {
-                    res.transactions.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
-                }
-            } else {
-                const parsed = clientParseStatementLines(rawText, format || 'Pasted Statement');
-                if (parsed.length > 0) {
-                    parsed.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
-                    setMsg(`Successfully imported ${parsed.length} statement entries into memory!`);
-                } else {
-                    setMsg('Could not find transaction amounts in text.');
+                try {
+                    const res = await apiRequest('/api/import/statement', {
+                        method: 'POST',
+                        body: JSON.stringify({ rawText, format })
+                    });
+                    if (res && res.transactions && res.transactions.length > 0) {
+                        setMsg(res.message);
+                        res.transactions.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
+                        setLoading(false);
+                        return;
+                    }
+                } catch (apiErr) {
+                    console.warn('Backend API unreachable, using client statement parser:', apiErr);
                 }
             }
+
+            // Always fallback to client parser
+            const parsed = clientParseStatementLines(rawText, format || 'Pasted Statement');
+            if (parsed.length > 0) {
+                parsed.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
+                setMsg(`Successfully imported ${parsed.length} statement entries into memory!`);
+            } else {
+                setMsg('Could not find transaction amounts in text.');
+            }
         } catch (err) {
-            setMsg('Error parsing statement: ' + err.message);
+            const parsed = clientParseStatementLines(rawText, format || 'Pasted Statement');
+            if (parsed.length > 0) {
+                parsed.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
+                setMsg(`Successfully imported ${parsed.length} statement entries into memory!`);
+            } else {
+                setMsg('Error parsing statement: ' + err.message);
+            }
         } finally {
             setLoading(false);
         }
