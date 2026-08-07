@@ -343,14 +343,14 @@ function ExpenseProvider({ children }) {
                     dispatch({
                         type: 'SYNC_ALL_DATA',
                         payload: {
-                            transactions: Array.isArray(txs) ? txs.map(t => ({ ...t, id: t._id || t.id })) : [],
-                            budgets: Array.isArray(bdgts) ? bdgts.map(b => ({ ...b, id: b._id || b.id })) : [],
-                            creditCards: Array.isArray(cards) ? cards.map(c => ({ ...c, id: c._id || c.id })) : [],
-                            emis: Array.isArray(emisList) ? emisList.map(e => ({ ...e, id: e._id || e.id })) : [],
-                            friends: Array.isArray(frnds) ? frnds.map(f => ({ ...f, id: f._id || f.id })) : [],
-                            groups: Array.isArray(grps) ? grps.map(g => ({ ...g, id: g._id || g.id })) : [],
-                            sharedExpenses: Array.isArray(exps) ? exps.map(x => ({ ...x, id: x._id || x.id })) : [],
-                            settlements: Array.isArray(setts) ? setts.map(s => ({ ...s, id: s._id || s.id })) : []
+                            transactions: (Array.isArray(txs) && txs.length > 0) ? txs.map(t => ({ ...t, id: t._id || t.id })) : state.transactions,
+                            budgets: (Array.isArray(bdgts) && bdgts.length > 0) ? bdgts.map(b => ({ ...b, id: b._id || b.id })) : state.budgets,
+                            creditCards: (Array.isArray(cards) && cards.length > 0) ? cards.map(c => ({ ...c, id: c._id || c.id })) : state.creditCards,
+                            emis: (Array.isArray(emisList) && emisList.length > 0) ? emisList.map(e => ({ ...e, id: e._id || e.id })) : state.emis,
+                            friends: (Array.isArray(frnds) && frnds.length > 0) ? frnds.map(f => ({ ...f, id: f._id || f.id })) : state.friends,
+                            groups: (Array.isArray(grps) && grps.length > 0) ? grps.map(g => ({ ...g, id: g._id || g.id })) : state.groups,
+                            sharedExpenses: (Array.isArray(exps) && exps.length > 0) ? exps.map(x => ({ ...x, id: x._id || x.id })) : state.sharedExpenses,
+                            settlements: (Array.isArray(setts) && setts.length > 0) ? setts.map(s => ({ ...s, id: s._id || s.id })) : state.settlements
                         }
                     });
                 } catch (err) {
