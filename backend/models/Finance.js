@@ -11,7 +11,53 @@ const TransactionSchema = new mongoose.Schema({
     date: { type: String, required: true }, // Format: YYYY-MM-DD
     recurring: { type: String, default: 'One-time' },
     source: { type: String, enum: ['manual','ocr','copilot','import','simulation'], default: 'manual' },
-    sourceMeta: { type: mongoose.Schema.Types.Mixed }
+    sourceMeta: { type: mongoose.Schema.Types.Mixed },
+    lifeEventId: { type: String, default: '' },
+    lifeEventName: { type: String, default: '' },
+    contextPath: [{ type: String }], // e.g. ["Amazon", "Mechanical Keyboard", "Gaming Desk", "Semester 5"]
+    purchaseMeta: {
+        warrantyYears: { type: Number, default: 1 },
+        expectedLifespanMonths: { type: Number, default: 36 },
+        serialNumber: { type: String, default: '' },
+        receiptUrl: { type: String, default: '' },
+        depreciationRate: { type: Number, default: 0.2 } // 20% annual
+    },
+    relatedTransactionIds: [{ type: String }] // For graph relationship
+});
+
+// --- Life Event / Chapter Model ---
+const LifeEventSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    name: { type: String, required: true }, // e.g. "Goa Trip 2026", "Developer Setup"
+    category: { type: String, default: 'Lifestyle' }, // Travel, Education, Career, Milestone, Tech
+    description: { type: String, default: '' },
+    icon: { type: String, default: 'bi-stars' },
+    bannerColor: { type: String, default: '#6366F1' },
+    startDate: { type: String, required: true },
+    endDate: { type: String, default: '' },
+    tags: [{ type: String }]
+});
+
+// --- Subscription Model ---
+const SubscriptionSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    serviceName: { type: String, required: true },
+    merchantLogo: { type: String, default: '' },
+    billingCycle: { type: String, enum: ['monthly', 'yearly'], default: 'monthly' },
+    cost: { type: Number, required: true },
+    nextBillingDate: { type: String, required: true },
+    usageStatus: { type: String, enum: ['active', 'unused', 'flagged'], default: 'active' },
+    category: { type: String, default: 'Software/Subscriptions' }
+});
+
+// --- Merchant Intelligence Model ---
+const MerchantSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    name: { type: String, required: true },
+    logoUrl: { type: String, default: '' },
+    defaultCategory: { type: String, default: 'General' },
+    visitCount: { type: Number, default: 1 },
+    totalSpend: { type: Number, default: 0 }
 });
 
 // --- Budget Model ---
@@ -81,6 +127,9 @@ const SettlementSchema = new mongoose.Schema({
 
 module.exports = {
     Transaction: mongoose.model('Transaction', TransactionSchema),
+    LifeEvent: mongoose.model('LifeEvent', LifeEventSchema),
+    Subscription: mongoose.model('Subscription', SubscriptionSchema),
+    Merchant: mongoose.model('Merchant', MerchantSchema),
     Budget: mongoose.model('Budget', BudgetSchema),
     CreditCard: mongoose.model('CreditCard', CreditCardSchema),
     Emi: mongoose.model('Emi', EmiSchema),

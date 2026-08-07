@@ -27,15 +27,25 @@ const DEFAULT_STATE = {
     token: '',
     userEmail: '',
     transactions: [
-        { id: 't1', desc: 'Salary - Tata Steel Ltd', amount: 5200, type: 'income', category: 'Salary', method: 'Bank Transfer', date: '2026-07-01', recurring: 'Monthly' },
-        { id: 't2', desc: 'Apartment Luxury Rent', amount: 1200, type: 'expense', category: 'Rent & Housing', method: 'Bank Transfer', date: '2026-07-02', recurring: 'Monthly' },
-        { id: 't3', desc: 'AWS Cloud Hosting Services', amount: 45, type: 'expense', category: 'Software/Subscriptions', method: 'Credit Card', date: '2026-07-03', recurring: 'Monthly' },
-        { id: 't4', desc: 'Stripe Payout - Freelance Project', amount: 850, type: 'income', category: 'Side Hustle', method: 'PayPal', date: '2026-07-04', recurring: 'One-time' },
-        { id: 't5', desc: 'Whole Foods Market', amount: 120, type: 'expense', category: 'Groceries', method: 'Debit Card', date: '2026-07-05', recurring: 'One-time' },
-        { id: 't6', desc: 'Equinox Gym & Fitness Membership', amount: 150, type: 'expense', category: 'Health', method: 'Credit Card', date: '2026-07-06', recurring: 'Monthly' },
-        { id: 't7', desc: 'Blue Bottle Roasters', amount: 8.50, type: 'expense', category: 'Dining Out', method: 'Credit Card', date: '2026-07-07', recurring: 'One-time' },
-        { id: 't8', desc: 'Apple One Premier Bundle', amount: 32.95, type: 'expense', category: 'Software/Subscriptions', method: 'Credit Card', date: '2026-07-07', recurring: 'Monthly' },
-        { id: 't9', desc: 'NYC Transit MetroPass', amount: 33.00, type: 'expense', category: 'Transport', method: 'Debit Card', date: '2026-07-08', recurring: 'One-time' }
+        { id: 't1', desc: 'Salary - Tata Steel Ltd', amount: 5200, type: 'income', category: 'Salary', method: 'Bank Transfer', date: '2026-07-01', recurring: 'Monthly', contextPath: ['Salary', 'Career'] },
+        { id: 't2', desc: 'Apartment Luxury Rent', amount: 1200, type: 'expense', category: 'Rent & Housing', method: 'Bank Transfer', date: '2026-07-02', recurring: 'Monthly', contextPath: ['Housing', 'Living'] },
+        { id: 't3', desc: 'IndiGo Flight to Goa', amount: 240, type: 'expense', category: 'Travel', method: 'Credit Card', date: '2026-06-12', recurring: 'One-time', lifeEventId: 'le_1', lifeEventName: 'Goa Trip 2026', contextPath: ['IndiGo', 'Flight', 'Travel', 'Goa Trip 2026'] },
+        { id: 't4', desc: 'Keychron K2 Mechanical Keyboard', amount: 129, type: 'expense', category: 'Electronics', method: 'Credit Card', date: '2026-03-04', recurring: 'One-time', lifeEventId: 'le_2', lifeEventName: 'Indie Developer Setup', contextPath: ['Amazon', 'Keychron Keyboard', 'Workstation', 'Indie Developer Setup'] },
+        { id: 't5', desc: 'MacBook Pro M3 Max 16"', amount: 3200, type: 'expense', category: 'Electronics', method: 'Credit Card', date: '2026-03-01', recurring: 'One-time', lifeEventId: 'le_2', lifeEventName: 'Indie Developer Setup', contextPath: ['Apple', 'MacBook Pro', 'Education', 'Indie Developer Setup'], purchaseMeta: { warrantyYears: 3, expectedLifespanMonths: 48, serialNumber: 'C02GX089Q6W3', depreciationRate: 0.15 } },
+        { id: 't6', desc: 'Whole Foods Market', amount: 120, type: 'expense', category: 'Groceries', method: 'Debit Card', date: '2026-07-05', recurring: 'One-time', contextPath: ['Groceries', 'Food'] },
+        { id: 't7', desc: 'Blue Bottle Roasters', amount: 8.50, type: 'expense', category: 'Dining Out', method: 'Credit Card', date: '2026-07-07', recurring: 'One-time', contextPath: ['Coffee', 'Lifestyle'] },
+        { id: 't8', desc: 'Apple One Premier Bundle', amount: 32.95, type: 'expense', category: 'Software/Subscriptions', method: 'Credit Card', date: '2026-07-07', recurring: 'Monthly', contextPath: ['Apple', 'Subscriptions'] },
+        { id: 't9', desc: 'NYC Transit MetroPass', amount: 33.00, type: 'expense', category: 'Transport', method: 'Debit Card', date: '2026-07-08', recurring: 'One-time', contextPath: ['Transport', 'Commute'] }
+    ],
+    lifeEvents: [
+        { id: 'le_1', name: 'Goa Trip 2026', category: 'Travel', icon: 'bi-airplane-fill', bannerColor: '#3B82F6', startDate: '2026-06-10', endDate: '2026-06-18', tags: ['Travel', 'Friends', 'Beach'] },
+        { id: 'le_2', name: 'Indie Developer Setup', category: 'Tech & Career', icon: 'bi-laptop-fill', bannerColor: '#8B5CF6', startDate: '2026-03-01', endDate: '2026-03-15', tags: ['Hardware', 'Workstation', 'Coding'] },
+        { id: 'le_3', name: 'College Semester 5', category: 'Education', icon: 'bi-book-fill', bannerColor: '#10B981', startDate: '2026-01-10', endDate: '2026-05-20', tags: ['College', 'Books', 'Hostel'] }
+    ],
+    subscriptions: [
+        { id: 'sub_1', serviceName: 'Netflix Premium', cost: 19.99, billingCycle: 'monthly', nextBillingDate: '2026-08-18', usageStatus: 'active', category: 'Entertainment' },
+        { id: 'sub_2', serviceName: 'Adobe Creative Cloud', cost: 54.99, billingCycle: 'monthly', nextBillingDate: '2026-08-22', usageStatus: 'unused', category: 'Software/Subscriptions' },
+        { id: 'sub_3', serviceName: 'GitHub Copilot', cost: 10.00, billingCycle: 'monthly', nextBillingDate: '2026-08-28', usageStatus: 'active', category: 'Software/Subscriptions' }
     ],
     budgets: [
         { id: 'b1', category: 'Groceries', limit: 400 },
@@ -110,6 +120,18 @@ function expenseReducer(state, action) {
             break;
         case 'DELETE_TRANSACTION':
             newState = { ...state, transactions: state.transactions.filter(t => t.id !== action.payload) };
+            break;
+        case 'ADD_LIFE_EVENT':
+            newState = { ...state, lifeEvents: [action.payload, ...state.lifeEvents] };
+            break;
+        case 'DELETE_LIFE_EVENT':
+            newState = { ...state, lifeEvents: state.lifeEvents.filter(l => l.id !== action.payload) };
+            break;
+        case 'ADD_SUBSCRIPTION':
+            newState = { ...state, subscriptions: [action.payload, ...state.subscriptions] };
+            break;
+        case 'DELETE_SUBSCRIPTION':
+            newState = { ...state, subscriptions: state.subscriptions.filter(s => s.id !== action.payload) };
             break;
         case 'ADD_BUDGET':
             newState = { ...state, budgets: [...state.budgets, action.payload] };
@@ -445,6 +467,9 @@ function Sidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
     const { state, dispatch } = useContext(ExpenseContext);
 
     const navItems = [
+        { id: 'timeline', label: 'Memory Timeline', icon: 'bi-journal-bookmark-fill' },
+        { id: 'memory_search', label: 'AI Natural Search', icon: 'bi-stars' },
+        { id: 'subscriptions', label: 'Subscriptions Audit', icon: 'bi-arrow-repeat' },
         { id: 'dashboard', label: 'Dashboard', icon: 'bi-grid-1x2-fill' },
         { id: 'transactions', label: 'Ledger & Receipts', icon: 'bi-receipt-cutoff' },
         { id: 'budgets', label: 'Budgets & Goals', icon: 'bi-piggy-bank-fill' },
@@ -2089,6 +2114,694 @@ function SplitwiseView() {
 }
 
 // ============================================================
+// FINANCIAL MEMORY TIMELINE VIEW
+// ============================================================
+function TimelineView() {
+    const { state, dispatch, apiRequest } = useContext(ExpenseContext);
+    const [selectedCategory, setSelectedCategory] = useState('All');
+    const [showAddEventModal, setShowAddEventModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [inspectTx, setInspectTx] = useState(null);
+
+    const [eventName, setEventName] = useState('');
+    const [eventCat, setEventCat] = useState('Travel');
+    const [eventStart, setEventStart] = useState(new Date().toISOString().split('T')[0]);
+    const [eventDesc, setEventDesc] = useState('');
+
+    const categories = ['All', 'Travel', 'Tech & Career', 'Education', 'Lifestyle'];
+
+    const filteredEvents = state.lifeEvents.filter(e => selectedCategory === 'All' || e.category === selectedCategory);
+
+    const handleCreateLifeEvent = async (e) => {
+        e.preventDefault();
+        if (!eventName) return;
+        const entry = {
+            id: 'le_' + Date.now(),
+            name: eventName,
+            category: eventCat,
+            description: eventDesc,
+            icon: eventCat === 'Travel' ? 'bi-airplane-fill' : eventCat === 'Education' ? 'bi-book-fill' : 'bi-laptop-fill',
+            bannerColor: eventCat === 'Travel' ? '#3B82F6' : eventCat === 'Education' ? '#10B981' : '#8B5CF6',
+            startDate: eventStart,
+            tags: [eventCat]
+        };
+
+        if (state.token && state.token !== 'offline_token') {
+            try {
+                const saved = await apiRequest('/api/life-events', { method: 'POST', body: JSON.stringify(entry) });
+                if (saved && (saved._id || saved.id)) entry.id = saved._id || saved.id;
+            } catch (err) { console.error('Life event save error:', err); }
+        }
+
+        dispatch({ type: 'ADD_LIFE_EVENT', payload: entry });
+        setShowAddEventModal(false); setEventName(''); setEventDesc('');
+    };
+
+    return (
+        <div className="animate-slide-up">
+            <div className="page-header">
+                <div>
+                    <h1 className="page-title">Financial Memory Timeline</h1>
+                    <p className="page-subtitle">Your Life Story Remembered Through Financial Experiences</p>
+                </div>
+                <div className="page-actions">
+                    <button className="btn btn-secondary btn-sm" onClick={() => setShowImportModal(true)}>
+                        <i className="bi bi-file-earmark-arrow-up-fill"></i> Import Statement
+                    </button>
+                    <button className="btn btn-primary btn-sm" onClick={() => setShowAddEventModal(true)}>
+                        <i className="bi bi-plus-lg"></i> Life Chapter
+                    </button>
+                </div>
+            </div>
+
+            {/* Filter Pills */}
+            <div className="auth-tabs" style={{ maxWidth: 500, marginBottom: 24 }}>
+                {categories.map(c => (
+                    <button
+                        key={c}
+                        className={`auth-tab ${selectedCategory === c ? 'active' : ''}`}
+                        onClick={() => setSelectedCategory(c)}
+                    >
+                        {c}
+                    </button>
+                ))}
+            </div>
+
+            {/* Timeline Container */}
+            <div className="timeline-container">
+                {filteredEvents.map(evt => {
+                    const chapterTx = state.transactions.filter(t => t.lifeEventId === evt.id || (t.lifeEventName && t.lifeEventName.toLowerCase() === evt.name.toLowerCase()));
+                    const chapterTotal = chapterTx.reduce((acc, t) => acc + t.amount, 0);
+
+                    return (
+                        <div key={evt.id} className="timeline-chapter">
+                            <div className="timeline-chapter-node" style={{ background: evt.bannerColor }}>
+                                <i className={`bi ${evt.icon}`}></i>
+                            </div>
+
+                            <div className="timeline-card">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                                    <div>
+                                        <div style={{ fontSize: 11, fontWeight: 700, color: evt.bannerColor, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                            {evt.category} · {evt.startDate}
+                                        </div>
+                                        <h3 style={{ fontSize: 18, fontWeight: 800, margin: '4px 0 2px 0' }}>{evt.name}</h3>
+                                        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>{evt.description || 'Life chapter milestone & memory collection'}</p>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: 16, fontWeight: 800 }}>{state.currency}{chapterTotal.toLocaleString()}</div>
+                                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{chapterTx.length} Memory Entries</span>
+                                    </div>
+                                </div>
+
+                                <div className="tx-list" style={{ marginTop: 12 }}>
+                                    {chapterTx.length === 0 ? (
+                                        <div style={{ padding: 12, fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
+                                            No transactions linked to this chapter yet.
+                                        </div>
+                                    ) : (
+                                        chapterTx.map(t => (
+                                            <div key={t.id} className="tx-row" onClick={() => setInspectTx(t)} style={{ cursor: 'pointer' }}>
+                                                <div className="tx-icon expense">
+                                                    <i className="bi bi-stars"></i>
+                                                </div>
+                                                <div className="tx-info">
+                                                    {t.contextPath && t.contextPath.length > 0 && (
+                                                        <div className="context-breadcrumb">
+                                                            {t.contextPath.join(' → ')}
+                                                        </div>
+                                                    )}
+                                                    <div className="tx-desc">{t.desc}</div>
+                                                    <div className="tx-meta-row">
+                                                        <span className="tx-date">{t.date}</span>
+                                                        <span className="tx-pill">{t.category}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="tx-amount expense">{state.currency}{t.amount}</div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* MODALS */}
+            <AnimatePresence>
+                {showAddEventModal && (
+                    <div className="modal-overlay" onClick={() => setShowAddEventModal(false)}>
+                        <motion.div className="modal" onClick={e => e.stopPropagation()} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
+                            <div className="modal-header">
+                                <div className="modal-title">Create Life Event Chapter</div>
+                                <button className="modal-close" onClick={() => setShowAddEventModal(false)}><i className="bi bi-x-lg"></i></button>
+                            </div>
+                            <form onSubmit={handleCreateLifeEvent}>
+                                <div className="modal-body">
+                                    <div className="form-group">
+                                        <label className="form-label">Event Name</label>
+                                        <input className="form-control" placeholder="e.g. Goa Trip 2026, Semester 5" value={eventName} onChange={e => setEventName(e.target.value)} required />
+                                    </div>
+                                    <div className="form-row">
+                                        <div className="form-group">
+                                            <label className="form-label">Category</label>
+                                            <select className="form-control" value={eventCat} onChange={e => setEventCat(e.target.value)}>
+                                                <option value="Travel">Travel</option>
+                                                <option value="Tech & Career">Tech & Career</option>
+                                                <option value="Education">Education</option>
+                                                <option value="Lifestyle">Lifestyle</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Start Date</label>
+                                            <input type="date" className="form-control" value={eventStart} onChange={e => setEventStart(e.target.value)} required />
+                                        </div>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Description</label>
+                                        <input className="form-control" placeholder="Brief memory note..." value={eventDesc} onChange={e => setEventDesc(e.target.value)} />
+                                    </div>
+                                </div>
+                                <div className="modal-footer">
+                                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddEventModal(false)}>Cancel</button>
+                                    <button type="submit" className="btn btn-primary">Create Chapter</button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+
+                {showImportModal && <StatementImportModal onClose={() => setShowImportModal(false)} />}
+                {inspectTx && <PurchaseMetaModal tx={inspectTx} onClose={() => setInspectTx(null)} />}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+// ============================================================
+// AI NATURAL LANGUAGE SEARCH & MEMORY VIEW
+// ============================================================
+function AIMemoryView() {
+    const { state, apiRequest } = useContext(ExpenseContext);
+    const [query, setQuery] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [aiResponse, setAiResponse] = useState(null);
+    const [inspectTx, setInspectTx] = useState(null);
+
+    const prompts = [
+        "Show everything I bought for my gaming setup",
+        "How much did I spend on Goa Trip?",
+        "Show all Apple purchases",
+        "What did I spend on coffee?"
+    ];
+
+    const handleSearch = async (e, customQuery) => {
+        if (e) e.preventDefault();
+        const searchQuery = customQuery || query;
+        if (!searchQuery) return;
+        setQuery(searchQuery);
+        setLoading(true);
+
+        try {
+            if (state.token && state.token !== 'offline_token') {
+                const res = await apiRequest('/api/ai/memory-search', {
+                    method: 'POST',
+                    body: JSON.stringify({ query: searchQuery })
+                });
+                setAiResponse(res);
+            } else {
+                // Local filter simulation
+                const qLower = searchQuery.toLowerCase();
+                const matches = state.transactions.filter(t =>
+                    t.desc.toLowerCase().includes(qLower) ||
+                    t.category.toLowerCase().includes(qLower) ||
+                    (t.lifeEventName && t.lifeEventName.toLowerCase().includes(qLower)) ||
+                    (t.contextPath && t.contextPath.some(c => c.toLowerCase().includes(qLower)))
+                );
+                const total = matches.reduce((acc, m) => acc + m.amount, 0);
+                setAiResponse({
+                    query: searchQuery,
+                    response: `Found ${matches.length} memory entries matching "${searchQuery}" totaling $${total.toLocaleString()}.`,
+                    totalSpend: total,
+                    count: matches.length,
+                    results: matches
+                });
+            }
+        } catch (err) {
+            console.error('Search error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="animate-slide-up">
+            <div className="page-header">
+                <div>
+                    <h1 className="page-title">AI Natural Language Memory</h1>
+                    <p className="page-subtitle">Ask Anything About Your Financial History in Natural Words</p>
+                </div>
+            </div>
+
+            {/* Search Input Bar */}
+            <div className="card" style={{ padding: 24, marginBottom: 24 }}>
+                <form onSubmit={e => handleSearch(e)} style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ position: 'relative', flex: 1 }}>
+                        <i className="bi bi-search" style={{ position: 'absolute', left: 16, top: 14, color: 'var(--text-muted)', fontSize: 16 }}></i>
+                        <input
+                            className="form-control"
+                            style={{ paddingLeft: 44, height: 46, fontSize: 15 }}
+                            placeholder="Ask e.g., 'Show everything I bought for my developer setup'..."
+                            value={query}
+                            onChange={e => setQuery(e.target.value)}
+                        />
+                    </div>
+                    <button type="submit" className="btn btn-primary" style={{ padding: '0 24px' }} disabled={loading}>
+                        {loading ? 'Searching...' : 'Ask AI'}
+                    </button>
+                </form>
+
+                {/* Prompt Suggestions */}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)', alignSelf: 'center' }}>Try asking:</span>
+                    {prompts.map(p => (
+                        <button
+                            key={p}
+                            className="btn btn-ghost btn-sm"
+                            style={{ background: 'var(--bg-subtle)', borderRadius: 20, fontSize: 12 }}
+                            onClick={() => handleSearch(null, p)}
+                        >
+                            ✨ {p}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Response & Matches */}
+            {aiResponse && (
+                <div className="animate-fade-in">
+                    <div className="card" style={{ padding: 20, marginBottom: 20, borderLeft: '4px solid var(--accent)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                            <i className="bi bi-robot" style={{ color: 'var(--accent)', fontSize: 18 }}></i>
+                            <strong style={{ fontSize: 14 }}>Financial Memory Insights</strong>
+                        </div>
+                        <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>
+                            {aiResponse.response}
+                        </p>
+                    </div>
+
+                    <div className="card">
+                        <div className="card-header">
+                            <div className="card-title">Matching Memory Entries ({aiResponse.results?.length || 0})</div>
+                        </div>
+
+                        <div className="tx-list">
+                            {aiResponse.results?.length === 0 ? (
+                                <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)' }}>
+                                    No entries found matching your query.
+                                </div>
+                            ) : (
+                                aiResponse.results.map(t => (
+                                    <div key={t.id} className="tx-row" onClick={() => setInspectTx(t)} style={{ cursor: 'pointer' }}>
+                                        <div className="tx-icon expense"><i className="bi bi-stars"></i></div>
+                                        <div className="tx-info">
+                                            {t.contextPath && t.contextPath.length > 0 && (
+                                                <div className="context-breadcrumb">{t.contextPath.join(' → ')}</div>
+                                            )}
+                                            <div className="tx-desc">{t.desc}</div>
+                                            <div className="tx-meta-row">
+                                                <span className="tx-date">{t.date}</span>
+                                                <span className="tx-pill">{t.category}</span>
+                                            </div>
+                                        </div>
+                                        <div className="tx-amount expense">{state.currency}{t.amount}</div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <AnimatePresence>
+                {inspectTx && <PurchaseMetaModal tx={inspectTx} onClose={() => setInspectTx(null)} />}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+// ============================================================
+// SUBSCRIPTIONS INTELLIGENCE VIEW
+// ============================================================
+function SubscriptionsView() {
+    const { state, dispatch, apiRequest } = useContext(ExpenseContext);
+    const [showAddSubModal, setShowAddSubModal] = useState(false);
+
+    const [subName, setSubName] = useState('');
+    const [subCost, setSubCost] = useState('');
+    const [subCycle, setSubCycle] = useState('monthly');
+    const [subCategory, setSubCategory] = useState('Software/Subscriptions');
+
+    const totalMonthlyBurn = state.subscriptions
+        .filter(s => s.billingCycle === 'monthly')
+        .reduce((acc, s) => acc + s.cost, 0);
+
+    const unusedSubs = state.subscriptions.filter(s => s.usageStatus === 'unused');
+
+    const handleAddSub = async (e) => {
+        e.preventDefault();
+        if (!subName || !subCost) return;
+
+        const entry = {
+            id: 'sub_' + Date.now(),
+            serviceName: subName,
+            cost: parseFloat(subCost),
+            billingCycle: subCycle,
+            category: subCategory,
+            nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            usageStatus: 'active'
+        };
+
+        if (state.token && state.token !== 'offline_token') {
+            try {
+                const saved = await apiRequest('/api/subscriptions', { method: 'POST', body: JSON.stringify(entry) });
+                if (saved && (saved._id || saved.id)) entry.id = saved._id || saved.id;
+            } catch (err) { console.error('Sub save error:', err); }
+        }
+
+        dispatch({ type: 'ADD_SUBSCRIPTION', payload: entry });
+        setShowAddSubModal(false); setSubName(''); setSubCost('');
+    };
+
+    const handleDeleteSub = async (id) => {
+        if (state.token && state.token !== 'offline_token') {
+            try { await apiRequest(`/api/subscriptions/${id}`, { method: 'DELETE' }); }
+            catch (err) { console.error('Sub delete error:', err); }
+        }
+        dispatch({ type: 'DELETE_SUBSCRIPTION', payload: id });
+    };
+
+    return (
+        <div className="animate-slide-up">
+            <div className="page-header">
+                <div>
+                    <h1 className="page-title">Subscriptions & Recurring Burn</h1>
+                    <p className="page-subtitle">Unused Subscriptions Audit, Renewal Schedules & Waste Detection</p>
+                </div>
+                <button className="btn btn-primary btn-sm" onClick={() => setShowAddSubModal(true)}>
+                    <i className="bi bi-plus-lg"></i> Track Subscription
+                </button>
+            </div>
+
+            {/* Unused Subscriptions Alert Banner */}
+            {unusedSubs.length > 0 && (
+                <div className="card" style={{ padding: 16, marginBottom: 24, background: 'var(--warning-light)', borderColor: 'var(--warning)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <i className="bi bi-exclamation-triangle-fill" style={{ color: 'var(--warning)', fontSize: 20 }}></i>
+                        <div>
+                            <strong style={{ display: 'block', fontSize: 14 }}>Unused Subscriptions Detected!</strong>
+                            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                                You have {unusedSubs.length} subscription ({unusedSubs.map(s => s.serviceName).join(', ')}) flagged as low usage. Canceling could save you {state.currency}{(unusedSubs.reduce((a, s) => a + s.cost, 0) * 12).toFixed(2)}/year.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Burn KPI Cards */}
+            <div className="kpi-grid" style={{ marginBottom: 24 }}>
+                <div className="kpi-card">
+                    <div className="kpi-title">Monthly Subscription Burn</div>
+                    <div className="kpi-value">{state.currency}{totalMonthlyBurn.toFixed(2)}</div>
+                    <span className="kpi-sub">Across {state.subscriptions.length} recurring services</span>
+                </div>
+                <div className="kpi-card">
+                    <div className="kpi-title">Annual Projected Burn</div>
+                    <div className="kpi-value">{state.currency}{(totalMonthlyBurn * 12).toFixed(2)}</div>
+                    <span className="kpi-sub">12-month recurring expenditure</span>
+                </div>
+            </div>
+
+            {/* Subscriptions Grid */}
+            <div className="dashboard-grid-2">
+                {state.subscriptions.map(s => (
+                    <div key={s.id} className="card" style={{ position: 'relative' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                            <div>
+                                <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>{s.serviceName}</h3>
+                                <span className="tx-pill" style={{ marginTop: 4 }}>{s.category}</span>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: 18, fontWeight: 800 }}>{state.currency}{s.cost}/mo</div>
+                                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Due {s.nextBillingDate}</span>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                            <span className={`badge ${s.usageStatus === 'unused' ? 'badge-danger' : 'badge-success'}`}>
+                                {s.usageStatus === 'unused' ? '⚠️ Flagged Unused' : '✓ Active'}
+                            </span>
+                            <button
+                                className="icon-btn"
+                                style={{ width: 24, height: 24, border: 'none', background: 'transparent' }}
+                                onClick={() => handleDeleteSub(s.id)}
+                                title="Remove Subscription"
+                            >
+                                <i className="bi bi-trash text-danger" style={{ fontSize: 13 }}></i>
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <AnimatePresence>
+                {showAddSubModal && (
+                    <div className="modal-overlay" onClick={() => setShowAddSubModal(false)}>
+                        <motion.div className="modal" onClick={e => e.stopPropagation()} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
+                            <div className="modal-header">
+                                <div className="modal-title">Track Recurring Subscription</div>
+                                <button className="modal-close" onClick={() => setShowAddSubModal(false)}><i className="bi bi-x-lg"></i></button>
+                            </div>
+                            <form onSubmit={handleAddSub}>
+                                <div className="modal-body">
+                                    <div className="form-group">
+                                        <label className="form-label">Service Name</label>
+                                        <input className="form-control" placeholder="e.g. Netflix, Figma, Spotify" value={subName} onChange={e => setSubName(e.target.value)} required />
+                                    </div>
+                                    <div className="form-row">
+                                        <div className="form-group">
+                                            <label className="form-label">Cost ({state.currency})</label>
+                                            <input type="number" step="0.01" className="form-control" placeholder="19.99" value={subCost} onChange={e => setSubCost(e.target.value)} required />
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label">Cycle</label>
+                                            <select className="form-control" value={subCycle} onChange={e => setSubCycle(e.target.value)}>
+                                                <option value="monthly">Monthly</option>
+                                                <option value="yearly">Yearly</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="modal-footer">
+                                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddSubModal(false)}>Cancel</button>
+                                    <button type="submit" className="btn btn-primary">Track Subscription</button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+// ============================================================
+// STATEMENT IMPORT ENGINE MODAL
+// ============================================================
+function StatementImportModal({ onClose }) {
+    const { state, dispatch, apiRequest } = useContext(ExpenseContext);
+    const [rawText, setRawText] = useState('');
+    const [format, setFormat] = useState('Paytm / UPI');
+    const [loading, setLoading] = useState(false);
+    const [msg, setMsg] = useState('');
+
+    const handleImport = async (e) => {
+        e.preventDefault();
+        if (!rawText) return;
+        setLoading(true); setMsg('');
+
+        try {
+            if (state.token && state.token !== 'offline_token') {
+                const res = await apiRequest('/api/import/statement', {
+                    method: 'POST',
+                    body: JSON.stringify({ rawText, format })
+                });
+                setMsg(res.message);
+                if (res.transactions) {
+                    res.transactions.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
+                }
+            } else {
+                // Local simulation
+                const lines = rawText.split('\n').filter(Boolean);
+                lines.forEach((l, idx) => {
+                    dispatch({
+                        type: 'ADD_TRANSACTION',
+                        payload: {
+                            id: 't_imp_' + Date.now() + '_' + idx,
+                            desc: l.slice(0, 40) || `Imported Transaction #${idx + 1}`,
+                            amount: 45.00 + idx * 10,
+                            type: 'expense',
+                            category: 'Shopping',
+                            method: format,
+                            date: new Date().toISOString().split('T')[0],
+                            contextPath: ['Imported Statement', format]
+                        }
+                    });
+                });
+                setMsg(`Successfully imported ${lines.length} statement entries into memory!`);
+            }
+        } catch (err) {
+            setMsg('Error parsing statement: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <motion.div className="modal" onClick={e => e.stopPropagation()} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
+                <div className="modal-header">
+                    <div className="modal-title">Statement & Bank Importer</div>
+                    <button className="modal-close" onClick={onClose}><i className="bi bi-x-lg"></i></button>
+                </div>
+                <form onSubmit={handleImport}>
+                    <div className="modal-body">
+                        <div className="form-group">
+                            <label className="form-label">Statement Format</label>
+                            <select className="form-control" value={format} onChange={e => setFormat(e.target.value)}>
+                                <option value="Paytm / UPI">Paytm / PhonePe / GPay UPI</option>
+                                <option value="HDFC / ICICI Bank">HDFC / ICICI Bank Statement</option>
+                                <option value="CSV / Excel Export">CSV / Excel Raw Text</option>
+                                <option value="Credit Card Statement">Credit Card Statement</option>
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Paste Statement Content / CSV Rows</label>
+                            <textarea
+                                className="form-control"
+                                rows={6}
+                                placeholder="Paste lines from statement e.g. 2026-07-02 Amazon Keyboard Rs.129.00..."
+                                value={rawText}
+                                onChange={e => setRawText(e.target.value)}
+                                required
+                            />
+                        </div>
+                        {msg && <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 600 }}>{msg}</div>}
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-secondary" onClick={onClose}>Close</button>
+                        <button type="submit" className="btn btn-primary" disabled={loading}>
+                            {loading ? 'Processing...' : 'Run AI Extraction'}
+                        </button>
+                    </div>
+                </form>
+            </motion.div>
+        </div>
+    );
+}
+
+// ============================================================
+// PURCHASE INTELLIGENCE INSPECTOR MODAL
+// ============================================================
+function PurchaseMetaModal({ tx, onClose }) {
+    const { state } = useContext(ExpenseContext);
+    const meta = tx.purchaseMeta || { warrantyYears: 2, expectedLifespanMonths: 36, depreciationRate: 0.15, serialNumber: 'C02GX089Q6W3' };
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <motion.div className="modal" onClick={e => e.stopPropagation()} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
+                <div className="modal-header">
+                    <div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase' }}>Purchase Intelligence Inspector</div>
+                        <div className="modal-title">{tx.desc}</div>
+                    </div>
+                    <button className="modal-close" onClick={onClose}><i className="bi bi-x-lg"></i></button>
+                </div>
+                <div className="modal-body">
+                    {/* Context Path */}
+                    {tx.contextPath && (
+                        <div className="context-breadcrumb" style={{ marginBottom: 16 }}>
+                            {tx.contextPath.join(' → ')}
+                        </div>
+                    )}
+
+                    <div className="kpi-grid" style={{ marginBottom: 16 }}>
+                        <div className="kpi-card" style={{ padding: 14 }}>
+                            <div className="kpi-title">Original Cost</div>
+                            <div className="kpi-value">{state.currency}{tx.amount}</div>
+                        </div>
+                        <div className="kpi-card" style={{ padding: 14 }}>
+                            <div className="kpi-title">Warranty Coverage</div>
+                            <div className="kpi-value">{meta.warrantyYears} Years</div>
+                        </div>
+                    </div>
+
+                    {/* Knowledge Graph Relationship */}
+                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Linked Expense Relationship Graph</div>
+                    <div className="purchase-graph-wrap">
+                        <div className="graph-node"><i className="bi bi-laptop"></i> MacBook Pro</div>
+                        <div className="graph-arrow">→</div>
+                        <div className="graph-node"><i className="bi bi-keyboard"></i> Keychron Keyboard</div>
+                        <div className="graph-arrow">→</div>
+                        <div className="graph-node"><i className="bi bi-mouse"></i> MX Master 3</div>
+                        <div className="graph-arrow">→</div>
+                        <div className="graph-node"><i className="bi bi-display"></i> LG 4K Display</div>
+                    </div>
+                </div>
+                <div className="modal-footer">
+                    <button className="btn btn-primary" onClick={onClose}>Close Inspector</button>
+                </div>
+            </motion.div>
+        </div>
+    );
+}
+
+// ============================================================
+// MOBILE PWA BOTTOM NAVIGATION & FAB
+// ============================================================
+function BottomNav({ activeTab, setActiveTab, onOpenImport }) {
+    const navItems = [
+        { id: 'timeline', label: 'Timeline', icon: 'bi-journal-bookmark-fill' },
+        { id: 'memory_search', label: 'AI Search', icon: 'bi-stars' },
+        { id: 'dashboard', label: 'Home', icon: 'bi-grid-1x2-fill' },
+        { id: 'transactions', label: 'Ledger', icon: 'bi-receipt-cutoff' },
+        { id: 'subscriptions', label: 'Audit', icon: 'bi-arrow-repeat' }
+    ];
+
+    return (
+        <>
+            <button className="pwa-fab" onClick={onOpenImport} title="Quick Import / Memory Entry">
+                <i className="bi bi-plus-lg"></i>
+            </button>
+
+            <nav className="pwa-bottom-bar">
+                {navItems.map(item => (
+                    <button
+                        key={item.id}
+                        className={`pwa-nav-btn ${activeTab === item.id ? 'active' : ''}`}
+                        onClick={() => setActiveTab(item.id)}
+                    >
+                        <i className={`bi ${item.icon}`}></i>
+                        <span>{item.label}</span>
+                    </button>
+                ))}
+            </nav>
+        </>
+    );
+}
+
+// ============================================================
 // FINANCIAL CALCULATORS TAB
 // ============================================================
 function CalculatorsView() {
@@ -2468,9 +3181,10 @@ function AuthView() {
 // ============================================================
 function MainApp() {
     const { state } = useContext(ExpenseContext);
-    const [activeTab, setActiveTab] = useState('dashboard');
+    const [activeTab, setActiveTab] = useState('timeline');
     const [collapsed, setCollapsed] = useState(false);
     const [isCmdOpen, setIsCmdOpen] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
 
     // Keyboard shortcut for Cmd+K
     useEffect(() => {
@@ -2505,6 +3219,9 @@ function MainApp() {
                 />
 
                 <div className="page-content">
+                    {activeTab === 'timeline' && <TimelineView />}
+                    {activeTab === 'memory_search' && <AIMemoryView />}
+                    {activeTab === 'subscriptions' && <SubscriptionsView />}
                     {activeTab === 'dashboard' && <DashboardView setActiveTab={setActiveTab} />}
                     {activeTab === 'transactions' && <TransactionsView />}
                     {activeTab === 'budgets' && <BudgetsView />}
@@ -2515,6 +3232,14 @@ function MainApp() {
             </main>
 
             <AIChatDock />
+
+            <BottomNav
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                onOpenImport={() => setShowImportModal(true)}
+            />
+
+            {showImportModal && <StatementImportModal onClose={() => setShowImportModal(false)} />}
 
             <CommandPalette
                 isOpen={isCmdOpen}
