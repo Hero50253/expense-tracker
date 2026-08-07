@@ -2721,46 +2721,41 @@ function clientParseStatementLines(rawText, defaultMethod = 'Pasted Statement') 
             }
         }
 
-        let merchantName = '';
-        const upiNameMatch = blockText.match(/UPI\/(?:DR|CR)\/\d+\/([^/]+)/i);
-        if (upiNameMatch && upiNameMatch[1]) merchantName = upiNameMatch[1].trim();
+        // Clean and extract transaction name
+        let cleanName = blockText
+            .replace(dateRegex, '')
+            .replace(/UPI payment|UPI receipt|Debit Card|Single Transfer|Online payment|Others/gi, '')
+            .replace(/(?:Services|Food and Drinks|Shopping|Education|Entertainment|Grocery|Digital Payments|Self Transfer|Interests & Dividends|Loan EMI|Travel|Home expenses|Personal Care|Health and Wellness|Donations|Others \(In\)|Others \(Out\))/gi, '')
+            .replace(/(?:[+\-]?\s*(?:₹|Rs\.?|INR|\$)?\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})|\d+(?:\.\d{2}))/gi, '')
+            .replace(/\b\d{10,16}\b/g, '')
+            .replace(/UPI\/[A-Z0-9/._-]+/gi, '')
+            .replace(/[^a-zA-Z0-9\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
 
-        if (!merchantName) {
-            if (/youtube/i.test(blockText)) merchantName = 'YouTube Subscription';
-            else if (/spotify/i.test(blockText)) merchantName = 'Spotify Subscription';
-            else if (/dominos/i.test(blockText)) merchantName = 'Dominos Pizza';
-            else if (/nescafe/i.test(blockText)) merchantName = 'Nescafe Coffee';
-            else if (/slice/i.test(blockText)) merchantName = 'Slice Repayment';
-            else if (/lazypay/i.test(blockText)) merchantName = 'LazyPay Repayment';
-            else if (/snapmint/i.test(blockText)) merchantName = 'Snapmint Payment';
-            else {
-                merchantName = blockText
-                    .replace(dateRegex, '')
-                    .replace(/\b\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?\s*(?:CR|DR)?\b/gi, '')
-                    .replace(/(?:Ref|Cheque|Transaction|Details|UPI|DR|CR)\s*[:#\-_]?/gi, '')
-                    .replace(/[^a-zA-Z0-9\s]/g, ' ')
-                    .replace(/\s+/g, ' ')
-                    .trim() || `Bank Entry #${idx + 1}`;
-            }
+        if (!cleanName || cleanName.length < 2) {
+            cleanName = `Transaction #${idx + 1}`;
         }
 
         let cat = isCredit ? 'Income' : 'Shopping';
-        if (/slice|lazypay|snapmint|emi|repay/i.test(blockText)) cat = 'EMIs & Repayments';
-        else if (/youtube|spotify|netflix|adobe/i.test(blockText)) cat = 'Software/Subscriptions';
-        else if (/dominos|nescafe|swiggy|zomato|starbucks/i.test(blockText)) cat = 'Dining Out';
-        else if (/anju|harvin|shalini|vivek|keshav|akbar|devitra|transfer|upi/i.test(blockText)) cat = isCredit ? 'UPI Transfer (Received)' : 'UPI Transfer (Sent)';
+        if (/zomato|swiggy|dominos|meenu|dining|food|cafe|restaurant/i.test(cleanName)) cat = 'Dining Out';
+        else if (/instamart|zepto|grocery|vijay kumar|market/i.test(cleanName)) cat = 'Groceries';
+        else if (/spotify|youtube|google play|apple|netflix/i.test(cleanName)) cat = 'Software/Subscriptions';
+        else if (/edutech|engineering|education|school|college|institute/i.test(cleanName)) cat = 'Education';
+        else if (/blue dart|courier|logistics|express/i.test(cleanName)) cat = 'Services';
+        else if (/slice|lazypay|snapmint|emi|repay/i.test(cleanName)) cat = 'EMIs & Repayments';
 
         const isIncome = isCredit || (!isDebit && /deposit|credit|received/i.test(blockText));
 
         parsed.push({
             id: 't_imp_' + Date.now() + '_' + idx,
-            desc: merchantName,
+            desc: cleanName,
             amount: txAmount,
             type: isIncome ? 'income' : 'expense',
             category: cat,
-            method: defaultMethod,
+            method: isIncome ? 'UPI Receipt' : (defaultMethod || 'UPI Payment'),
             date: txDate,
-            contextPath: [merchantName, cat, isIncome ? 'Income' : 'UPI Experience'],
+            contextPath: [cleanName, cat, isIncome ? 'Income' : 'IDFC First Bank'],
             source: 'import'
         });
     });
