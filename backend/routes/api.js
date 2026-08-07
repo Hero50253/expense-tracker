@@ -395,19 +395,20 @@ router.delete('/subscriptions/:id', auth, async (req, res) => {
 
 // --- Helper: Ultra-Flexible Bank Statement & Table Parser ---
 function parseStatementLines(rawText, defaultMethod = 'Bank Statement') {
-    const rawLines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+    const dateRegex = /\b(\d{2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2}(?:\s+\d{2}:\d{2})?|\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/]\d{2}[-/]\d{2})\b/gi;
+
+    // Pre-process: insert newlines before every Date stamp so multiline table text doesn't merge dates onto amount lines
+    let formattedText = rawText.replace(dateRegex, '\n$1');
+    const rawLines = formattedText.split('\n').map(l => l.trim()).filter(Boolean);
     const parsed = [];
 
-    // Regex for date timestamp starters e.g. "01 Jul 26 01:12", "01 Jul 26", "2026-07-01"
-    const dateRegex = /\b(\d{2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2}(?:\s+\d{2}:\d{2})?|\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/]\d{2}[-/]\d{2})\b/i;
-
-    // Group multiline table blocks starting with date stamps
+    // Group lines into transaction blocks starting with a Date stamp
     const blocks = [];
     let currentBlock = [];
 
     rawLines.forEach(line => {
-        if (/^(Date and Time|Value Date|Transaction Details|Ref\/Cheque|Withdrawals|Deposits|Balance|Opening Balance)/i.test(line)) {
-            return; // Skip table header lines
+        if (/^(Date and Time|Value Date|Transaction Details|Ref\/Cheque|Withdrawals|Deposits|Balance|Opening Balance|REGISTERED OFFICE|IDFC FIRST BANK)/i.test(line)) {
+            return;
         }
 
         const startsWithDate = dateRegex.test(line.slice(0, 30));
@@ -424,47 +425,43 @@ function parseStatementLines(rawText, defaultMethod = 'Bank Statement') {
         blocks.push(currentBlock.join(' '));
     }
 
-    // Process each reconstructed block
     blocks.forEach((blockText, idx) => {
         if (blockText.length < 5) return;
 
-        const isDebit = /UPI\/DR|WITHDRAWAL|DEBIT|SENT USING PAYTM/i.test(blockText);
+        // Skip standalone balance lines at bottom of statement e.g. "175,221.61 CR"
+        if (/^\d{1,3}(?:,\d{3})*(?:\.\d{2})?\s*(?:CR|DR)?$/i.test(blockText.trim())) {
+            return;
+        }
+
+        const isDebit = /UPI\/DR|WITHDRAWAL|DEBIT|Sent using Paytm UPI|MandateExecute|Pay request|paymentlink/i.test(blockText);
         const isCredit = /UPI\/CR|DEPOSIT|CREDIT|RECEIVED/i.test(blockText);
 
-        // Strip dates & reference numbers (e.g. 609515275414, 01 Jul 26 01:12) before searching for transaction amounts
-        const textWithoutDatesAndRefs = blockText
+        const cleanForAmount = blockText
             .replace(dateRegex, '')
-            .replace(/\b\d{10,16}\b/g, '') // Remove long Ref/UPI IDs
-            .replace(/\b\d{2}:\d{2}\b/g, ''); // Remove timestamps like 01:12
+            .replace(/\b\d{10,16}\b/g, '')
+            .replace(/\b\d{2}:\d{2}\b/g, '');
 
-        // Find decimal amounts (e.g. 130.00, 6,000.00, 2,056.09, 771.28, 401.00)
-        const amountMatches = [...textWithoutDatesAndRefs.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})|\d+(?:\.\d{1,2}))/gi)];
+        const amountMatches = [...cleanForAmount.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})|\d+(?:\.\d{1,2}))/gi)];
         let amounts = [];
 
         for (const m of amountMatches) {
             const val = parseFloat(m[1].replace(/,/g, ''));
-            if (!isNaN(val) && val > 0 && val < 10000000) {
-                if ((val === 2024 || val === 2025 || val === 2026 || val === 2027) && !/(?:Rs\.?|INR|₹|\$)/i.test(m[0])) {
-                    continue;
-                }
+            if (!isNaN(val) && val > 0 && val < 10000000 && val !== 2024 && val !== 2025 && val !== 2026 && val !== 2027) {
                 amounts.push(val);
             }
         }
 
-        // Fallback: if no decimal match found, search for whole integers > 0
         if (amounts.length === 0) {
-            const intMatches = [...textWithoutDatesAndRefs.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*|\d+)/gi)];
+            const intMatches = [...cleanForAmount.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*|\d+)/gi)];
             for (const m of intMatches) {
                 const val = parseFloat(m[1].replace(/,/g, ''));
-                if (!isNaN(val) && val > 0 && val < 5000000 && val !== 2024 && val !== 2025 && val !== 2026) {
+                if (!isNaN(val) && val > 0 && val < 5000000 && val !== 2024 && val !== 2025 && val !== 2026 && val !== 2027) {
                     amounts.push(val);
                 }
             }
         }
 
         if (amounts.length === 0) return;
-
-        // Transaction amount is the first valid extracted amount
         const txAmount = amounts[0];
 
         const dateMatch = blockText.match(dateRegex);
@@ -490,13 +487,16 @@ function parseStatementLines(rawText, defaultMethod = 'Bank Statement') {
         }
 
         if (!merchantName) {
-            if (/slice/i.test(blockText)) merchantName = 'Slice Repayment';
+            if (/youtube/i.test(blockText)) merchantName = 'YouTube Subscription';
+            else if (/spotify/i.test(blockText)) merchantName = 'Spotify Subscription';
+            else if (/dominos/i.test(blockText)) merchantName = 'Dominos Pizza';
+            else if (/nescafe/i.test(blockText)) merchantName = 'Nescafe Coffee';
+            else if (/slice/i.test(blockText)) merchantName = 'Slice Repayment';
             else if (/lazypay/i.test(blockText)) merchantName = 'LazyPay Repayment';
             else if (/snapmint/i.test(blockText)) merchantName = 'Snapmint Payment';
-            else if (/paytm/i.test(blockText)) merchantName = 'Paytm UPI Transfer';
             else {
                 merchantName = blockText
-                    .replace(dateMatch ? dateMatch[0] : '', '')
+                    .replace(dateRegex, '')
                     .replace(/\b\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?\s*(?:CR|DR)?\b/gi, '')
                     .replace(/(?:Ref|Cheque|Transaction|Details|UPI|DR|CR)\s*[:#\-_]?/gi, '')
                     .replace(/[^a-zA-Z0-9\s]/g, ' ')
@@ -508,12 +508,12 @@ function parseStatementLines(rawText, defaultMethod = 'Bank Statement') {
         let cat = isCredit ? 'Income' : 'Shopping';
         if (/slice|lazypay|snapmint|emi|repay/i.test(blockText)) {
             cat = 'EMIs & Repayments';
-        } else if (/ashish|arnav|vivek|transfer|sent using paytm|upi/i.test(blockText)) {
-            cat = isCredit ? 'UPI Transfer (Received)' : 'UPI Transfer (Sent)';
-        } else if (/swiggy|zomato|dominos|starbucks/i.test(blockText)) {
+        } else if (/youtube|spotify|netflix|adobe/i.test(blockText)) {
+            cat = 'Software/Subscriptions';
+        } else if (/dominos|nescafe|swiggy|zomato|starbucks/i.test(blockText)) {
             cat = 'Dining Out';
-        } else if (/amazon|flipkart|apple/i.test(blockText)) {
-            cat = 'Electronics';
+        } else if (/anju|harvin|shalini|vivek|keshav|akbar|devitra|transfer|upi/i.test(blockText)) {
+            cat = isCredit ? 'UPI Transfer (Received)' : 'UPI Transfer (Sent)';
         }
 
         const isIncome = isCredit || (!isDebit && /deposit|credit|received/i.test(blockText));

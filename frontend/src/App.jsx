@@ -2639,15 +2639,17 @@ function SubscriptionsView() {
 }
 
 function clientParseStatementLines(rawText, defaultMethod = 'Pasted Statement') {
-    const rawLines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+    const dateRegex = /\b(\d{2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2}(?:\s+\d{2}:\d{2})?|\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/]\d{2}[-/]\d{2})\b/gi;
+
+    let formattedText = rawText.replace(dateRegex, '\n$1');
+    const rawLines = formattedText.split('\n').map(l => l.trim()).filter(Boolean);
     const parsed = [];
-    const dateRegex = /\b(\d{2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2}(?:\s+\d{2}:\d{2})?|\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/]\d{2}[-/]\d{2})\b/i;
 
     const blocks = [];
     let currentBlock = [];
 
     rawLines.forEach(line => {
-        if (/^(Date and Time|Value Date|Transaction Details|Ref\/Cheque|Withdrawals|Deposits|Balance|Opening Balance)/i.test(line)) {
+        if (/^(Date and Time|Value Date|Transaction Details|Ref\/Cheque|Withdrawals|Deposits|Balance|Opening Balance|REGISTERED OFFICE|IDFC FIRST BANK)/i.test(line)) {
             return;
         }
         const startsWithDate = dateRegex.test(line.slice(0, 30));
@@ -2662,28 +2664,30 @@ function clientParseStatementLines(rawText, defaultMethod = 'Pasted Statement') 
 
     blocks.forEach((blockText, idx) => {
         if (blockText.length < 5) return;
-        const isDebit = /UPI\/DR|WITHDRAWAL|DEBIT|SENT USING PAYTM/i.test(blockText);
+        if (/^\d{1,3}(?:,\d{3})*(?:\.\d{2})?\s*(?:CR|DR)?$/i.test(blockText.trim())) return;
+
+        const isDebit = /UPI\/DR|WITHDRAWAL|DEBIT|Sent using Paytm UPI|MandateExecute|Pay request|paymentlink/i.test(blockText);
         const isCredit = /UPI\/CR|DEPOSIT|CREDIT|RECEIVED/i.test(blockText);
 
-        const textWithoutDatesAndRefs = blockText
+        const cleanForAmount = blockText
             .replace(dateRegex, '')
             .replace(/\b\d{10,16}\b/g, '')
             .replace(/\b\d{2}:\d{2}\b/g, '');
 
-        const amountMatches = [...textWithoutDatesAndRefs.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})|\d+(?:\.\d{1,2}))/gi)];
+        const amountMatches = [...cleanForAmount.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})|\d+(?:\.\d{1,2}))/gi)];
         let amounts = [];
         for (const m of amountMatches) {
             const val = parseFloat(m[1].replace(/,/g, ''));
-            if (!isNaN(val) && val > 0 && val < 10000000 && val !== 2024 && val !== 2025 && val !== 2026) {
+            if (!isNaN(val) && val > 0 && val < 10000000 && val !== 2024 && val !== 2025 && val !== 2026 && val !== 2027) {
                 amounts.push(val);
             }
         }
 
         if (amounts.length === 0) {
-            const intMatches = [...textWithoutDatesAndRefs.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*|\d+)/gi)];
+            const intMatches = [...cleanForAmount.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*|\d+)/gi)];
             for (const m of intMatches) {
                 const val = parseFloat(m[1].replace(/,/g, ''));
-                if (!isNaN(val) && val > 0 && val < 5000000 && val !== 2024 && val !== 2025 && val !== 2026) {
+                if (!isNaN(val) && val > 0 && val < 5000000 && val !== 2024 && val !== 2025 && val !== 2026 && val !== 2027) {
                     amounts.push(val);
                 }
             }
@@ -2692,15 +2696,34 @@ function clientParseStatementLines(rawText, defaultMethod = 'Pasted Statement') 
         if (amounts.length === 0) return;
         const txAmount = amounts[0];
 
+        const dateMatch = blockText.match(dateRegex);
+        let txDate = new Date().toISOString().split('T')[0];
+        if (dateMatch) {
+            const dStr = dateMatch[0];
+            const parts = dStr.trim().split(/\s+/);
+            if (parts.length >= 3) {
+                const day = parts[0].padStart(2, '0');
+                const monthName = parts[1].slice(0, 3);
+                const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+                const months = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
+                if (months[monthName]) {
+                    txDate = `${year}-${months[monthName]}-${day}`;
+                }
+            }
+        }
+
         let merchantName = '';
         const upiNameMatch = blockText.match(/UPI\/(?:DR|CR)\/\d+\/([^/]+)/i);
         if (upiNameMatch && upiNameMatch[1]) merchantName = upiNameMatch[1].trim();
 
         if (!merchantName) {
-            if (/slice/i.test(blockText)) merchantName = 'Slice Repayment';
+            if (/youtube/i.test(blockText)) merchantName = 'YouTube Subscription';
+            else if (/spotify/i.test(blockText)) merchantName = 'Spotify Subscription';
+            else if (/dominos/i.test(blockText)) merchantName = 'Dominos Pizza';
+            else if (/nescafe/i.test(blockText)) merchantName = 'Nescafe Coffee';
+            else if (/slice/i.test(blockText)) merchantName = 'Slice Repayment';
             else if (/lazypay/i.test(blockText)) merchantName = 'LazyPay Repayment';
             else if (/snapmint/i.test(blockText)) merchantName = 'Snapmint Payment';
-            else if (/paytm/i.test(blockText)) merchantName = 'Paytm UPI Transfer';
             else {
                 merchantName = blockText
                     .replace(dateRegex, '')
@@ -2714,7 +2737,9 @@ function clientParseStatementLines(rawText, defaultMethod = 'Pasted Statement') 
 
         let cat = isCredit ? 'Income' : 'Shopping';
         if (/slice|lazypay|snapmint|emi|repay/i.test(blockText)) cat = 'EMIs & Repayments';
-        else if (/ashish|arnav|vivek|transfer|sent using paytm|upi/i.test(blockText)) cat = isCredit ? 'UPI Transfer (Received)' : 'UPI Transfer (Sent)';
+        else if (/youtube|spotify|netflix|adobe/i.test(blockText)) cat = 'Software/Subscriptions';
+        else if (/dominos|nescafe|swiggy|zomato|starbucks/i.test(blockText)) cat = 'Dining Out';
+        else if (/anju|harvin|shalini|vivek|keshav|akbar|devitra|transfer|upi/i.test(blockText)) cat = isCredit ? 'UPI Transfer (Received)' : 'UPI Transfer (Sent)';
 
         const isIncome = isCredit || (!isDebit && /deposit|credit|received/i.test(blockText));
 
@@ -2725,7 +2750,7 @@ function clientParseStatementLines(rawText, defaultMethod = 'Pasted Statement') 
             type: isIncome ? 'income' : 'expense',
             category: cat,
             method: defaultMethod,
-            date: '2026-07-01',
+            date: txDate,
             contextPath: [merchantName, cat, isIncome ? 'Income' : 'UPI Experience'],
             source: 'import'
         });
