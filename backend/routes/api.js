@@ -16,6 +16,10 @@ const {
 } = require('../models/Finance');
 // New imports for AI Copilot and Forecast
 const fetch = require('node-fetch');
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 
 // --- Transactions ---
@@ -447,6 +451,90 @@ router.post('/import/statement', auth, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Error processing statement' });
+    }
+});
+
+// --- Direct PDF & File Statement Parser ---
+router.post('/import/statement-file', auth, upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ message: 'No statement file uploaded' });
+
+        let rawText = '';
+        const mimeType = req.file.mimetype;
+        const buffer = req.file.buffer;
+
+        if (mimeType === 'application/pdf' || req.file.originalname.endsWith('.pdf')) {
+            const pdfData = await pdfParse(buffer);
+            rawText = pdfData.text;
+        } else {
+            rawText = buffer.toString('utf8');
+        }
+
+        if (!rawText || rawText.trim().length === 0) {
+            return res.status(400).json({ message: 'Could not extract text from uploaded statement file.' });
+        }
+
+        const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+        const parsed = [];
+
+        lines.forEach((line, idx) => {
+            const dateMatch = line.match(/\b(\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/]\d{2}[-/]\d{2})\b/i);
+            const amountMatch = line.match(/(?:Rs\.?|INR|\$)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)/i);
+
+            if (dateMatch && amountMatch) {
+                const cleanAmtStr = amountMatch[1].replace(/,/g, '');
+                const rawAmount = parseFloat(cleanAmtStr);
+
+                if (rawAmount > 0 && rawAmount < 1000000) {
+                    const descClean = line
+                        .replace(dateMatch[0], '')
+                        .replace(amountMatch[0], '')
+                        .replace(/[^a-zA-Z0-9\s]/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim() || `Statement Entry #${idx + 1}`;
+
+                    let cat = 'Shopping';
+                    let contextPath = [descClean, cat];
+                    if (/amazon|flipkart|apple|keyboard|macbook|laptop|electronics|myntra/i.test(descClean)) {
+                        cat = 'Electronics';
+                        contextPath = [descClean, 'Electronics', 'Tech & Workstation'];
+                    } else if (/indigo|flight|uber|hotel|airbnb|goa|trip|makemytrip|vistara/i.test(descClean)) {
+                        cat = 'Travel';
+                        contextPath = [descClean, 'Travel', 'Vacation & Trips'];
+                    } else if (/dominos|swiggy|zomato|starbucks|restaurant|cafe|mcdonald/i.test(descClean)) {
+                        cat = 'Dining Out';
+                        contextPath = [descClean, 'Dining Out', 'Social & Food'];
+                    } else if (/netflix|spotify|adobe|prime|subscription|github|google/i.test(descClean)) {
+                        cat = 'Software/Subscriptions';
+                        contextPath = [descClean, 'Subscription'];
+                    } else if (/salary|payout|credit|deposit/i.test(descClean)) {
+                        cat = 'Salary';
+                        contextPath = [descClean, 'Income'];
+                    }
+
+                    parsed.push({
+                        desc: descClean,
+                        amount: rawAmount,
+                        type: /credit|deposit|salary/i.test(line) ? 'income' : 'expense',
+                        category: cat,
+                        method: 'PDF Bank Statement',
+                        date: new Date().toISOString().split('T')[0],
+                        contextPath,
+                        source: 'import'
+                    });
+                }
+            }
+        });
+
+        if (parsed.length > 0) {
+            const savedTx = await Transaction.insertMany(parsed.map(p => ({ ...p, userId: req.user.id })));
+            res.json({ message: `Successfully extracted & imported ${savedTx.length} transactions from PDF!`, transactions: savedTx });
+        } else {
+            res.status(400).json({ message: 'No clear transaction lines found in PDF. Make sure it is an unencrypted bank or UPI statement.' });
+        }
+    } catch (err) {
+        console.error('PDF parsing error:', err);
+        res.status(500).json({ message: 'Failed to process PDF statement file: ' + err.message });
     }
 });
 
