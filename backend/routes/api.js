@@ -393,64 +393,103 @@ router.delete('/subscriptions/:id', auth, async (req, res) => {
     }
 });
 
-// --- Statement Import Engine ---
+// --- Helper: Ultra-Flexible Statement Line Parser ---
+function parseStatementLines(rawText, defaultMethod = 'Statement Import') {
+    const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+    const parsed = [];
+
+    lines.forEach((line, idx) => {
+        // Skip obvious header/footer lines
+        if (/^(opening balance|closing balance|page \d+|statement period|account number|total|sr no)/i.test(line)) {
+            return;
+        }
+
+        // Search for numbers (amounts) in the line
+        const amountMatches = [...line.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/gi)];
+
+        let extractedAmount = 0;
+        let amountMatchText = '';
+
+        for (const match of amountMatches) {
+            const valStr = match[1].replace(/,/g, '');
+            const val = parseFloat(valStr);
+            if (!isNaN(val) && val > 0 && val < 5000000) {
+                if ((val === 2024 || val === 2025 || val === 2026 || val === 2027) && !/(?:Rs\.?|INR|₹|\$)/i.test(match[0])) {
+                    continue; // Skip standalone 4-digit year numbers
+                }
+                extractedAmount = val;
+                amountMatchText = match[0];
+                break;
+            }
+        }
+
+        if (extractedAmount > 0) {
+            const dateMatch = line.match(/\b(\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/]\d{2}[-/]\d{2}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*\d{0,4})\b/i);
+
+            let descClean = line;
+            if (dateMatch) descClean = descClean.replace(dateMatch[0], '');
+            if (amountMatchText) descClean = descClean.replace(amountMatchText, '');
+
+            descClean = descClean
+                .replace(/(?:Ref|Txn|UPI|ID|IMPS|NEFT|DR|CR)\s*[:#\-_]?\s*\w+/gi, '')
+                .replace(/[^a-zA-Z0-9\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            if (!descClean || descClean.length < 2) {
+                descClean = `Statement Entry #${idx + 1}`;
+            }
+
+            let cat = 'Shopping';
+            if (/amazon|flipkart|apple|keyboard|macbook|laptop|electronics|myntra|croma|reliance|dell/i.test(descClean)) {
+                cat = 'Electronics';
+            } else if (/indigo|flight|uber|hotel|airbnb|goa|trip|makemytrip|vistara|ola|train|irctc/i.test(descClean)) {
+                cat = 'Travel';
+            } else if (/dominos|swiggy|zomato|starbucks|restaurant|cafe|mcdonald|kfc|pizza|food|dining/i.test(descClean)) {
+                cat = 'Dining Out';
+            } else if (/netflix|spotify|adobe|prime|subscription|github|google|apple.com|chatgpt/i.test(descClean)) {
+                cat = 'Software/Subscriptions';
+            } else if (/grocery|blinkit|zepto|bigbasket|dmart|supermarket|instamart/i.test(descClean)) {
+                cat = 'Groceries';
+            } else if (/salary|payout|stipend|freelance|credit|interest/i.test(line)) {
+                cat = 'Salary';
+            }
+
+            const isIncome = /credit|deposit|salary|refund|cashback/i.test(line);
+
+            parsed.push({
+                desc: descClean,
+                amount: extractedAmount,
+                type: isIncome ? 'income' : 'expense',
+                category: cat,
+                method: defaultMethod,
+                date: new Date().toISOString().split('T')[0],
+                contextPath: [descClean, cat, isIncome ? 'Income' : 'Life Experience'],
+                source: 'import'
+            });
+        }
+    });
+
+    return parsed;
+}
+
+// --- Statement Import Engine (Text) ---
 router.post('/import/statement', auth, async (req, res) => {
     try {
         const { rawText, format } = req.body;
         if (!rawText) return res.status(400).json({ message: 'No statement text provided' });
 
-        const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
-        const parsed = [];
-
-        // Basic statement line parsing heuristic
-        lines.forEach((line, idx) => {
-            const dateMatch = line.match(/\b(\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4})\b/);
-            const amountMatch = line.match(/(?:Rs\.?|INR|\$)?\s?(\d+(?:\.\d{1,2})?)/i);
-            if (dateMatch && amountMatch) {
-                const rawAmount = parseFloat(amountMatch[1]);
-                if (rawAmount > 0) {
-                    const descClean = line.replace(dateMatch[0], '').replace(amountMatch[0], '').replace(/[^a-zA-Z0-9\s]/g, ' ').trim() || `Imported Entry #${idx+1}`;
-                    
-                    // Simple context categorization inference
-                    let cat = 'Shopping';
-                    let contextPath = [descClean, cat];
-                    if (/amazon|flipkart|apple|keyboard|macbook|laptop/i.test(descClean)) {
-                        cat = 'Electronics';
-                        contextPath = [descClean, 'Electronics', 'Tech & Productivity'];
-                    } else if (/indigo|flight|uber|uber|hotel|airbnb|goa|trip/i.test(descClean)) {
-                        cat = 'Travel';
-                        contextPath = [descClean, 'Travel', 'Vacation & Trips'];
-                    } else if (/dominos|swiggy|zomato|starbucks|restaurant|cafe/i.test(descClean)) {
-                        cat = 'Dining Out';
-                        contextPath = [descClean, 'Dining Out', 'Social & Friends'];
-                    } else if (/netflix|spotify|adobe|prime|subscription/i.test(descClean)) {
-                        cat = 'Software/Subscriptions';
-                        contextPath = [descClean, 'Subscription'];
-                    }
-
-                    parsed.push({
-                        desc: descClean,
-                        amount: rawAmount,
-                        type: 'expense',
-                        category: cat,
-                        method: format || 'Bank Statement',
-                        date: new Date().toISOString().split('T')[0],
-                        contextPath,
-                        source: 'import'
-                    });
-                }
-            }
-        });
+        const parsed = parseStatementLines(rawText, format || 'Pasted Statement');
 
         if (parsed.length > 0) {
             const savedTx = await Transaction.insertMany(parsed.map(p => ({ ...p, userId: req.user.id })));
-            res.json({ message: `Successfully imported ${savedTx.length} transactions`, transactions: savedTx });
+            res.json({ message: `Successfully imported ${savedTx.length} transactions!`, transactions: savedTx });
         } else {
-            res.status(400).json({ message: 'Could not extract valid transaction lines from statement.' });
+            res.status(400).json({ message: 'No numbers or amounts found in the provided text. Please paste text with amounts e.g. "Dominos 450".' });
         }
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error processing statement' });
+        console.error('Text statement import error:', err);
+        res.status(500).json({ message: 'Error processing statement text: ' + err.message });
     }
 });
 
@@ -471,66 +510,16 @@ router.post('/import/statement-file', auth, upload.single('file'), async (req, r
         }
 
         if (!rawText || rawText.trim().length === 0) {
-            return res.status(400).json({ message: 'Could not extract text from uploaded statement file.' });
+            return res.status(400).json({ message: 'Could not extract text from uploaded file.' });
         }
 
-        const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
-        const parsed = [];
-
-        lines.forEach((line, idx) => {
-            const dateMatch = line.match(/\b(\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/]\d{2}[-/]\d{2})\b/i);
-            const amountMatch = line.match(/(?:Rs\.?|INR|\$)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)/i);
-
-            if (dateMatch && amountMatch) {
-                const cleanAmtStr = amountMatch[1].replace(/,/g, '');
-                const rawAmount = parseFloat(cleanAmtStr);
-
-                if (rawAmount > 0 && rawAmount < 1000000) {
-                    const descClean = line
-                        .replace(dateMatch[0], '')
-                        .replace(amountMatch[0], '')
-                        .replace(/[^a-zA-Z0-9\s]/g, ' ')
-                        .replace(/\s+/g, ' ')
-                        .trim() || `Statement Entry #${idx + 1}`;
-
-                    let cat = 'Shopping';
-                    let contextPath = [descClean, cat];
-                    if (/amazon|flipkart|apple|keyboard|macbook|laptop|electronics|myntra/i.test(descClean)) {
-                        cat = 'Electronics';
-                        contextPath = [descClean, 'Electronics', 'Tech & Workstation'];
-                    } else if (/indigo|flight|uber|hotel|airbnb|goa|trip|makemytrip|vistara/i.test(descClean)) {
-                        cat = 'Travel';
-                        contextPath = [descClean, 'Travel', 'Vacation & Trips'];
-                    } else if (/dominos|swiggy|zomato|starbucks|restaurant|cafe|mcdonald/i.test(descClean)) {
-                        cat = 'Dining Out';
-                        contextPath = [descClean, 'Dining Out', 'Social & Food'];
-                    } else if (/netflix|spotify|adobe|prime|subscription|github|google/i.test(descClean)) {
-                        cat = 'Software/Subscriptions';
-                        contextPath = [descClean, 'Subscription'];
-                    } else if (/salary|payout|credit|deposit/i.test(descClean)) {
-                        cat = 'Salary';
-                        contextPath = [descClean, 'Income'];
-                    }
-
-                    parsed.push({
-                        desc: descClean,
-                        amount: rawAmount,
-                        type: /credit|deposit|salary/i.test(line) ? 'income' : 'expense',
-                        category: cat,
-                        method: 'PDF Bank Statement',
-                        date: new Date().toISOString().split('T')[0],
-                        contextPath,
-                        source: 'import'
-                    });
-                }
-            }
-        });
+        const parsed = parseStatementLines(rawText, 'PDF Bank Statement');
 
         if (parsed.length > 0) {
             const savedTx = await Transaction.insertMany(parsed.map(p => ({ ...p, userId: req.user.id })));
             res.json({ message: `Successfully extracted & imported ${savedTx.length} transactions from PDF!`, transactions: savedTx });
         } else {
-            res.status(400).json({ message: 'No clear transaction lines found in PDF. Make sure it is an unencrypted bank or UPI statement.' });
+            res.status(400).json({ message: 'Could not find transaction amounts in PDF. If your PDF is password protected or scanned image, please unprotect or paste text.' });
         }
     } catch (err) {
         console.error('PDF parsing error:', err);
