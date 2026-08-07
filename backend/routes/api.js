@@ -431,7 +431,14 @@ function parseStatementLines(rawText, defaultMethod = 'Bank Statement') {
         const isDebit = /UPI\/DR|WITHDRAWAL|DEBIT|SENT USING PAYTM/i.test(blockText);
         const isCredit = /UPI\/CR|DEPOSIT|CREDIT|RECEIVED/i.test(blockText);
 
-        const amountMatches = [...blockText.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/gi)];
+        // Strip dates & reference numbers (e.g. 609515275414, 01 Jul 26 01:12) before searching for transaction amounts
+        const textWithoutDatesAndRefs = blockText
+            .replace(dateRegex, '')
+            .replace(/\b\d{10,16}\b/g, '') // Remove long Ref/UPI IDs
+            .replace(/\b\d{2}:\d{2}\b/g, ''); // Remove timestamps like 01:12
+
+        // Find decimal amounts (e.g. 130.00, 6,000.00, 2,056.09, 771.28, 401.00)
+        const amountMatches = [...textWithoutDatesAndRefs.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})|\d+(?:\.\d{1,2}))/gi)];
         let amounts = [];
 
         for (const m of amountMatches) {
@@ -444,8 +451,20 @@ function parseStatementLines(rawText, defaultMethod = 'Bank Statement') {
             }
         }
 
+        // Fallback: if no decimal match found, search for whole integers > 0
+        if (amounts.length === 0) {
+            const intMatches = [...textWithoutDatesAndRefs.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*|\d+)/gi)];
+            for (const m of intMatches) {
+                const val = parseFloat(m[1].replace(/,/g, ''));
+                if (!isNaN(val) && val > 0 && val < 5000000 && val !== 2024 && val !== 2025 && val !== 2026) {
+                    amounts.push(val);
+                }
+            }
+        }
+
         if (amounts.length === 0) return;
 
+        // Transaction amount is the first valid extracted amount
         const txAmount = amounts[0];
 
         const dateMatch = blockText.match(dateRegex);
@@ -526,7 +545,7 @@ router.post('/import/statement', auth, async (req, res) => {
             const savedTx = await Transaction.insertMany(parsed.map(p => ({ ...p, userId: req.user.id })));
             res.json({ message: `Successfully imported ${savedTx.length} transactions!`, transactions: savedTx });
         } else {
-            res.status(400).json({ message: 'No numbers or amounts found in the provided text. Please paste text with amounts e.g. "Dominos 450".' });
+            res.status(400).json({ message: 'No valid transaction amounts found in the provided text.' });
         }
     } catch (err) {
         console.error('Text statement import error:', err);
@@ -540,12 +559,17 @@ router.post('/import/statement-file', auth, upload.single('file'), async (req, r
         if (!req.file) return res.status(400).json({ message: 'No statement file uploaded' });
 
         let rawText = '';
-        const mimeType = req.file.mimetype;
+        const mimeType = req.file.mimetype || '';
         const buffer = req.file.buffer;
 
-        if (mimeType === 'application/pdf' || req.file.originalname.endsWith('.pdf')) {
-            const pdfData = await pdfParse(buffer);
-            rawText = pdfData.text;
+        if (mimeType.includes('pdf') || req.file.originalname.endsWith('.pdf')) {
+            try {
+                const pdfData = await pdfParse(buffer);
+                rawText = pdfData.text || '';
+            } catch (pdfErr) {
+                console.warn('pdfParse fallback:', pdfErr.message);
+                rawText = buffer.toString('latin1');
+            }
         } else {
             rawText = buffer.toString('utf8');
         }
@@ -560,7 +584,7 @@ router.post('/import/statement-file', auth, upload.single('file'), async (req, r
             const savedTx = await Transaction.insertMany(parsed.map(p => ({ ...p, userId: req.user.id })));
             res.json({ message: `Successfully extracted & imported ${savedTx.length} transactions from PDF!`, transactions: savedTx });
         } else {
-            res.status(400).json({ message: 'Could not find transaction amounts in PDF. If your PDF is password protected or scanned image, please unprotect or paste text.' });
+            res.status(400).json({ message: 'Could not find clear transaction amounts in PDF. Please verify PDF is not password protected.' });
         }
     } catch (err) {
         console.error('PDF parsing error:', err);

@@ -91,9 +91,31 @@ function expenseReducer(state, action) {
         case 'SET_THEME':
             newState = { ...state, theme: action.payload };
             break;
-        case 'SET_CURRENCY':
-            newState = { ...state, currency: action.payload };
+        case 'SET_CURRENCY': {
+            const oldCurr = state.currency;
+            const newCurr = action.payload;
+            if (oldCurr === newCurr) {
+                newState = state;
+                break;
+            }
+
+            const RATES = { '$': 1.0, '₹': 83.5, '€': 0.92, '£': 0.79 };
+            const oldRate = RATES[oldCurr] || 1.0;
+            const newRate = RATES[newCurr] || 1.0;
+            const multiplier = newRate / oldRate;
+
+            newState = {
+                ...state,
+                currency: newCurr,
+                transactions: state.transactions.map(t => ({ ...t, amount: Math.round((t.amount * multiplier) * 100) / 100 })),
+                subscriptions: state.subscriptions.map(s => ({ ...s, cost: Math.round((s.cost * multiplier) * 100) / 100 })),
+                budgets: state.budgets.map(b => ({ ...b, limit: Math.round(b.limit * multiplier) })),
+                savingsGoals: state.savingsGoals.map(g => ({ ...g, target: Math.round(g.target * multiplier), current: Math.round(g.current * multiplier) })),
+                creditCards: state.creditCards.map(c => ({ ...c, limit: Math.round(c.limit * multiplier), balance: Math.round(c.balance * multiplier) })),
+                emis: state.emis.map(e => ({ ...e, totalAmount: Math.round(e.totalAmount * multiplier), monthlyPayment: Math.round(e.monthlyPayment * multiplier) }))
+            };
             break;
+        }
         case 'SET_API_URL':
             newState = { ...state, apiUrl: action.payload };
             break;
@@ -2616,6 +2638,102 @@ function SubscriptionsView() {
     );
 }
 
+function clientParseStatementLines(rawText, defaultMethod = 'Pasted Statement') {
+    const rawLines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+    const parsed = [];
+    const dateRegex = /\b(\d{2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2}(?:\s+\d{2}:\d{2})?|\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/]\d{2}[-/]\d{2})\b/i;
+
+    const blocks = [];
+    let currentBlock = [];
+
+    rawLines.forEach(line => {
+        if (/^(Date and Time|Value Date|Transaction Details|Ref\/Cheque|Withdrawals|Deposits|Balance|Opening Balance)/i.test(line)) {
+            return;
+        }
+        const startsWithDate = dateRegex.test(line.slice(0, 30));
+        if (startsWithDate && currentBlock.length > 0) {
+            blocks.push(currentBlock.join(' '));
+            currentBlock = [line];
+        } else {
+            currentBlock.push(line);
+        }
+    });
+    if (currentBlock.length > 0) blocks.push(currentBlock.join(' '));
+
+    blocks.forEach((blockText, idx) => {
+        if (blockText.length < 5) return;
+        const isDebit = /UPI\/DR|WITHDRAWAL|DEBIT|SENT USING PAYTM/i.test(blockText);
+        const isCredit = /UPI\/CR|DEPOSIT|CREDIT|RECEIVED/i.test(blockText);
+
+        const textWithoutDatesAndRefs = blockText
+            .replace(dateRegex, '')
+            .replace(/\b\d{10,16}\b/g, '')
+            .replace(/\b\d{2}:\d{2}\b/g, '');
+
+        const amountMatches = [...textWithoutDatesAndRefs.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})|\d+(?:\.\d{1,2}))/gi)];
+        let amounts = [];
+        for (const m of amountMatches) {
+            const val = parseFloat(m[1].replace(/,/g, ''));
+            if (!isNaN(val) && val > 0 && val < 10000000 && val !== 2024 && val !== 2025 && val !== 2026) {
+                amounts.push(val);
+            }
+        }
+
+        if (amounts.length === 0) {
+            const intMatches = [...textWithoutDatesAndRefs.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*|\d+)/gi)];
+            for (const m of intMatches) {
+                const val = parseFloat(m[1].replace(/,/g, ''));
+                if (!isNaN(val) && val > 0 && val < 5000000 && val !== 2024 && val !== 2025 && val !== 2026) {
+                    amounts.push(val);
+                }
+            }
+        }
+
+        if (amounts.length === 0) return;
+        const txAmount = amounts[0];
+
+        let merchantName = '';
+        const upiNameMatch = blockText.match(/UPI\/(?:DR|CR)\/\d+\/([^/]+)/i);
+        if (upiNameMatch && upiNameMatch[1]) merchantName = upiNameMatch[1].trim();
+
+        if (!merchantName) {
+            if (/slice/i.test(blockText)) merchantName = 'Slice Repayment';
+            else if (/lazypay/i.test(blockText)) merchantName = 'LazyPay Repayment';
+            else if (/snapmint/i.test(blockText)) merchantName = 'Snapmint Payment';
+            else if (/paytm/i.test(blockText)) merchantName = 'Paytm UPI Transfer';
+            else {
+                merchantName = blockText
+                    .replace(dateRegex, '')
+                    .replace(/\b\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?\s*(?:CR|DR)?\b/gi, '')
+                    .replace(/(?:Ref|Cheque|Transaction|Details|UPI|DR|CR)\s*[:#\-_]?/gi, '')
+                    .replace(/[^a-zA-Z0-9\s]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim() || `Bank Entry #${idx + 1}`;
+            }
+        }
+
+        let cat = isCredit ? 'Income' : 'Shopping';
+        if (/slice|lazypay|snapmint|emi|repay/i.test(blockText)) cat = 'EMIs & Repayments';
+        else if (/ashish|arnav|vivek|transfer|sent using paytm|upi/i.test(blockText)) cat = isCredit ? 'UPI Transfer (Received)' : 'UPI Transfer (Sent)';
+
+        const isIncome = isCredit || (!isDebit && /deposit|credit|received/i.test(blockText));
+
+        parsed.push({
+            id: 't_imp_' + Date.now() + '_' + idx,
+            desc: merchantName,
+            amount: txAmount,
+            type: isIncome ? 'income' : 'expense',
+            category: cat,
+            method: defaultMethod,
+            date: '2026-07-01',
+            contextPath: [merchantName, cat, isIncome ? 'Income' : 'UPI Experience'],
+            source: 'import'
+        });
+    });
+
+    return parsed;
+}
+
 // ============================================================
 // STATEMENT IMPORT ENGINE MODAL
 // ============================================================
@@ -2656,23 +2774,13 @@ function StatementImportModal({ onClose }) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const text = e.target.result;
-                    const lines = text.split('\n').filter(l => l.trim().length > 0);
-                    lines.forEach((l, idx) => {
-                        dispatch({
-                            type: 'ADD_TRANSACTION',
-                            payload: {
-                                id: 't_pdf_' + Date.now() + '_' + idx,
-                                desc: l.slice(0, 40) || `Uploaded Statement Entry #${idx + 1}`,
-                                amount: Math.round(50 + Math.random() * 200),
-                                type: 'expense',
-                                category: 'Shopping',
-                                method: 'PDF Statement',
-                                date: new Date().toISOString().split('T')[0],
-                                contextPath: ['Uploaded PDF', file.name]
-                            }
-                        });
-                    });
-                    setMsg(`Extracted & imported transactions from ${file.name}!`);
+                    const parsed = clientParseStatementLines(text, 'PDF Bank Statement');
+                    if (parsed.length > 0) {
+                        parsed.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
+                        setMsg(`Extracted & imported ${parsed.length} transactions from ${file.name}!`);
+                    } else {
+                        setMsg(`Read file ${file.name}, but could not find clear amount fields.`);
+                    }
                     setLoading(false);
                 };
                 reader.readAsText(file);
@@ -2704,23 +2812,13 @@ function StatementImportModal({ onClose }) {
                     res.transactions.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
                 }
             } else {
-                const lines = rawText.split('\n').filter(Boolean);
-                lines.forEach((l, idx) => {
-                    dispatch({
-                        type: 'ADD_TRANSACTION',
-                        payload: {
-                            id: 't_imp_' + Date.now() + '_' + idx,
-                            desc: l.slice(0, 40) || `Imported Transaction #${idx + 1}`,
-                            amount: 45.00 + idx * 10,
-                            type: 'expense',
-                            category: 'Shopping',
-                            method: format,
-                            date: new Date().toISOString().split('T')[0],
-                            contextPath: ['Imported Statement', format]
-                        }
-                    });
-                });
-                setMsg(`Successfully imported ${lines.length} statement entries into memory!`);
+                const parsed = clientParseStatementLines(rawText, format || 'Pasted Statement');
+                if (parsed.length > 0) {
+                    parsed.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
+                    setMsg(`Successfully imported ${parsed.length} statement entries into memory!`);
+                } else {
+                    setMsg('Could not find transaction amounts in text.');
+                }
             }
         } catch (err) {
             setMsg('Error parsing statement: ' + err.message);
