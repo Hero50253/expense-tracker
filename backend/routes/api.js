@@ -393,81 +393,122 @@ router.delete('/subscriptions/:id', auth, async (req, res) => {
     }
 });
 
-// --- Helper: Ultra-Flexible Statement Line Parser ---
-function parseStatementLines(rawText, defaultMethod = 'Statement Import') {
-    const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+// --- Helper: Ultra-Flexible Bank Statement & Table Parser ---
+function parseStatementLines(rawText, defaultMethod = 'Bank Statement') {
+    const rawLines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
     const parsed = [];
 
-    lines.forEach((line, idx) => {
-        // Skip obvious header/footer lines
-        if (/^(opening balance|closing balance|page \d+|statement period|account number|total|sr no)/i.test(line)) {
-            return;
+    // Regex for date timestamp starters e.g. "01 Jul 26 01:12", "01 Jul 26", "2026-07-01"
+    const dateRegex = /\b(\d{2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2}(?:\s+\d{2}:\d{2})?|\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/]\d{2}[-/]\d{2})\b/i;
+
+    // Group multiline table blocks starting with date stamps
+    const blocks = [];
+    let currentBlock = [];
+
+    rawLines.forEach(line => {
+        if (/^(Date and Time|Value Date|Transaction Details|Ref\/Cheque|Withdrawals|Deposits|Balance|Opening Balance)/i.test(line)) {
+            return; // Skip table header lines
         }
 
-        // Search for numbers (amounts) in the line
-        const amountMatches = [...line.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/gi)];
+        const startsWithDate = dateRegex.test(line.slice(0, 30));
 
-        let extractedAmount = 0;
-        let amountMatchText = '';
+        if (startsWithDate && currentBlock.length > 0) {
+            blocks.push(currentBlock.join(' '));
+            currentBlock = [line];
+        } else {
+            currentBlock.push(line);
+        }
+    });
 
-        for (const match of amountMatches) {
-            const valStr = match[1].replace(/,/g, '');
-            const val = parseFloat(valStr);
-            if (!isNaN(val) && val > 0 && val < 5000000) {
-                if ((val === 2024 || val === 2025 || val === 2026 || val === 2027) && !/(?:Rs\.?|INR|₹|\$)/i.test(match[0])) {
-                    continue; // Skip standalone 4-digit year numbers
+    if (currentBlock.length > 0) {
+        blocks.push(currentBlock.join(' '));
+    }
+
+    // Process each reconstructed block
+    blocks.forEach((blockText, idx) => {
+        if (blockText.length < 5) return;
+
+        const isDebit = /UPI\/DR|WITHDRAWAL|DEBIT|SENT USING PAYTM/i.test(blockText);
+        const isCredit = /UPI\/CR|DEPOSIT|CREDIT|RECEIVED/i.test(blockText);
+
+        const amountMatches = [...blockText.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/gi)];
+        let amounts = [];
+
+        for (const m of amountMatches) {
+            const val = parseFloat(m[1].replace(/,/g, ''));
+            if (!isNaN(val) && val > 0 && val < 10000000) {
+                if ((val === 2024 || val === 2025 || val === 2026 || val === 2027) && !/(?:Rs\.?|INR|₹|\$)/i.test(m[0])) {
+                    continue;
                 }
-                extractedAmount = val;
-                amountMatchText = match[0];
-                break;
+                amounts.push(val);
             }
         }
 
-        if (extractedAmount > 0) {
-            const dateMatch = line.match(/\b(\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/]\d{2}[-/]\d{2}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*\d{0,4})\b/i);
+        if (amounts.length === 0) return;
 
-            let descClean = line;
-            if (dateMatch) descClean = descClean.replace(dateMatch[0], '');
-            if (amountMatchText) descClean = descClean.replace(amountMatchText, '');
+        const txAmount = amounts[0];
 
-            descClean = descClean
-                .replace(/(?:Ref|Txn|UPI|ID|IMPS|NEFT|DR|CR)\s*[:#\-_]?\s*\w+/gi, '')
-                .replace(/[^a-zA-Z0-9\s]/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-
-            if (!descClean || descClean.length < 2) {
-                descClean = `Statement Entry #${idx + 1}`;
+        const dateMatch = blockText.match(dateRegex);
+        let txDate = new Date().toISOString().split('T')[0];
+        if (dateMatch) {
+            const dStr = dateMatch[0];
+            const parts = dStr.trim().split(/\s+/);
+            if (parts.length >= 3) {
+                const day = parts[0].padStart(2, '0');
+                const monthName = parts[1].slice(0, 3);
+                const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+                const months = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
+                if (months[monthName]) {
+                    txDate = `${year}-${months[monthName]}-${day}`;
+                }
             }
-
-            let cat = 'Shopping';
-            if (/amazon|flipkart|apple|keyboard|macbook|laptop|electronics|myntra|croma|reliance|dell/i.test(descClean)) {
-                cat = 'Electronics';
-            } else if (/indigo|flight|uber|hotel|airbnb|goa|trip|makemytrip|vistara|ola|train|irctc/i.test(descClean)) {
-                cat = 'Travel';
-            } else if (/dominos|swiggy|zomato|starbucks|restaurant|cafe|mcdonald|kfc|pizza|food|dining/i.test(descClean)) {
-                cat = 'Dining Out';
-            } else if (/netflix|spotify|adobe|prime|subscription|github|google|apple.com|chatgpt/i.test(descClean)) {
-                cat = 'Software/Subscriptions';
-            } else if (/grocery|blinkit|zepto|bigbasket|dmart|supermarket|instamart/i.test(descClean)) {
-                cat = 'Groceries';
-            } else if (/salary|payout|stipend|freelance|credit|interest/i.test(line)) {
-                cat = 'Salary';
-            }
-
-            const isIncome = /credit|deposit|salary|refund|cashback/i.test(line);
-
-            parsed.push({
-                desc: descClean,
-                amount: extractedAmount,
-                type: isIncome ? 'income' : 'expense',
-                category: cat,
-                method: defaultMethod,
-                date: new Date().toISOString().split('T')[0],
-                contextPath: [descClean, cat, isIncome ? 'Income' : 'Life Experience'],
-                source: 'import'
-            });
         }
+
+        let merchantName = '';
+        const upiNameMatch = blockText.match(/UPI\/(?:DR|CR)\/\d+\/([^/]+)/i);
+        if (upiNameMatch && upiNameMatch[1]) {
+            merchantName = upiNameMatch[1].trim();
+        }
+
+        if (!merchantName) {
+            if (/slice/i.test(blockText)) merchantName = 'Slice Repayment';
+            else if (/lazypay/i.test(blockText)) merchantName = 'LazyPay Repayment';
+            else if (/snapmint/i.test(blockText)) merchantName = 'Snapmint Payment';
+            else if (/paytm/i.test(blockText)) merchantName = 'Paytm UPI Transfer';
+            else {
+                merchantName = blockText
+                    .replace(dateMatch ? dateMatch[0] : '', '')
+                    .replace(/\b\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?\s*(?:CR|DR)?\b/gi, '')
+                    .replace(/(?:Ref|Cheque|Transaction|Details|UPI|DR|CR)\s*[:#\-_]?/gi, '')
+                    .replace(/[^a-zA-Z0-9\s]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim() || `Bank Entry #${idx + 1}`;
+            }
+        }
+
+        let cat = isCredit ? 'Income' : 'Shopping';
+        if (/slice|lazypay|snapmint|emi|repay/i.test(blockText)) {
+            cat = 'EMIs & Repayments';
+        } else if (/ashish|arnav|vivek|transfer|sent using paytm|upi/i.test(blockText)) {
+            cat = isCredit ? 'UPI Transfer (Received)' : 'UPI Transfer (Sent)';
+        } else if (/swiggy|zomato|dominos|starbucks/i.test(blockText)) {
+            cat = 'Dining Out';
+        } else if (/amazon|flipkart|apple/i.test(blockText)) {
+            cat = 'Electronics';
+        }
+
+        const isIncome = isCredit || (!isDebit && /deposit|credit|received/i.test(blockText));
+
+        parsed.push({
+            desc: merchantName,
+            amount: txAmount,
+            type: isIncome ? 'income' : 'expense',
+            category: cat,
+            method: defaultMethod,
+            date: txDate,
+            contextPath: [merchantName, cat, isIncome ? 'Income' : 'UPI Experience'],
+            source: 'import'
+        });
     });
 
     return parsed;
