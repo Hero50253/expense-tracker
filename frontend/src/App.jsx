@@ -22,41 +22,50 @@ const ExpenseContext = createContext();
 
 const DEFAULT_STATE = {
     theme: 'light',
-    currency: '$',
+    currency: '₹',
     apiUrl: (import.meta && import.meta.env && import.meta.env.VITE_API_URL) || 'http://localhost:3000',
-    token: '',
-    userEmail: '',
+    token: 'amritansh_session_2026',
+    userEmail: 'amritanshanand@idfcfirst.bank',
     transactions: [
-        { id: 't1', desc: 'Salary - Tata Steel Ltd', amount: 5200, type: 'income', category: 'Salary', method: 'Bank Transfer', date: '2026-07-01', recurring: 'Monthly', contextPath: ['Salary', 'Career'] },
-        { id: 't2', desc: 'Apartment Luxury Rent', amount: 1200, type: 'expense', category: 'Rent & Housing', method: 'Bank Transfer', date: '2026-07-02', recurring: 'Monthly', contextPath: ['Housing', 'Living'] },
-        { id: 't3', desc: 'IndiGo Flight to Goa', amount: 240, type: 'expense', category: 'Travel', method: 'Credit Card', date: '2026-06-12', recurring: 'One-time', lifeEventId: 'le_1', lifeEventName: 'Goa Trip 2026', contextPath: ['IndiGo', 'Flight', 'Travel', 'Goa Trip 2026'] },
-        { id: 't4', desc: 'Keychron K2 Mechanical Keyboard', amount: 129, type: 'expense', category: 'Electronics', method: 'Credit Card', date: '2026-03-04', recurring: 'One-time', lifeEventId: 'le_2', lifeEventName: 'Indie Developer Setup', contextPath: ['Amazon', 'Keychron Keyboard', 'Workstation', 'Indie Developer Setup'] },
-        { id: 't5', desc: 'MacBook Pro M3 Max 16"', amount: 3200, type: 'expense', category: 'Electronics', method: 'Credit Card', date: '2026-03-01', recurring: 'One-time', lifeEventId: 'le_2', lifeEventName: 'Indie Developer Setup', contextPath: ['Apple', 'MacBook Pro', 'Education', 'Indie Developer Setup'], purchaseMeta: { warrantyYears: 3, expectedLifespanMonths: 48, serialNumber: 'C02GX089Q6W3', depreciationRate: 0.15 } },
-        { id: 't6', desc: 'Whole Foods Market', amount: 120, type: 'expense', category: 'Groceries', method: 'Debit Card', date: '2026-07-05', recurring: 'One-time', contextPath: ['Groceries', 'Food'] },
-        { id: 't7', desc: 'Blue Bottle Roasters', amount: 8.50, type: 'expense', category: 'Dining Out', method: 'Credit Card', date: '2026-07-07', recurring: 'One-time', contextPath: ['Coffee', 'Lifestyle'] },
-        { id: 't8', desc: 'Apple One Premier Bundle', amount: 32.95, type: 'expense', category: 'Software/Subscriptions', method: 'Credit Card', date: '2026-07-07', recurring: 'Monthly', contextPath: ['Apple', 'Subscriptions'] },
-        { id: 't9', desc: 'NYC Transit MetroPass', amount: 33.00, type: 'expense', category: 'Transport', method: 'Debit Card', date: '2026-07-08', recurring: 'One-time', contextPath: ['Transport', 'Commute'] }
+        { id: 't_aug_1', desc: 'Blue Dart Express Limited', amount: 1028.00, type: 'expense', category: 'Services', method: 'UPI Payment', date: '2026-08-07', contextPath: ['Blue Dart Express', 'Logistics & Courier', 'Services'] },
+        { id: 't_aug_2', desc: 'Zomato Food Delivery', amount: 414.00, type: 'expense', category: 'Dining Out', method: 'UPI Payment', date: '2026-08-07', contextPath: ['Zomato', 'Food and Drinks', 'Lifestyle'] },
+        { id: 't_aug_3', desc: 'Armaan S/I (UPI Transfer Received)', amount: 200.00, type: 'income', category: 'Digital Payments', method: 'UPI Receipt', date: '2026-08-07', contextPath: ['Armaan S/I', 'UPI Received', 'Income'] },
+        { id: 't_aug_4', desc: 'Swiggy Instamart Quick Grocery', amount: 190.00, type: 'expense', category: 'Groceries', method: 'UPI Payment', date: '2026-08-06', contextPath: ['Swiggy Instamart', 'Quick Commerce', 'Groceries'] },
+        { id: 't_aug_5', desc: 'Meenu Bhandari Dining', amount: 255.00, type: 'expense', category: 'Dining Out', method: 'UPI Payment', date: '2026-08-06', contextPath: ['Meenu Bhandari', 'Food and Drinks', 'Dining Out'] },
+        { id: 't_aug_6', desc: 'Amiman Edutech Pvt Ltd Course', amount: 539.00, type: 'expense', category: 'Education', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Amiman Edutech', 'Tech Education', 'Career Growth'] },
+        { id: 't_aug_7', desc: 'Agansel Shopping', amount: 299.00, type: 'expense', category: 'Shopping', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Agansel', 'Lifestyle Shopping', 'Shopping'] },
+        { id: 't_aug_8', desc: 'Zomato Limited Meal', amount: 552.00, type: 'expense', category: 'Dining Out', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Zomato Limited', 'Food and Drinks', 'Dining Out'] },
+        { id: 't_aug_9', desc: 'Amritansh Anand UPI Test', amount: 2.00, type: 'expense', category: 'Digital Payments', method: 'UPI Payment', date: '2026-08-05', contextPath: ['UPI Verification', 'Digital Payments'] },
+        { id: 't_aug_10', desc: 'Spotify India Pvt Ltd Music', amount: 69.00, type: 'expense', category: 'Software/Subscriptions', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Spotify India', 'Audio Streaming', 'Entertainment'] },
+        { id: 't_aug_11', desc: 'Mr Vijay Kumar Fresh Market', amount: 2170.00, type: 'expense', category: 'Groceries', method: 'UPI Payment', date: '2026-08-04', contextPath: ['Mr Vijay Kumar', 'Pantry & Market', 'Groceries'] },
+        { id: 't_aug_12', desc: 'Google Play Apps & Games', amount: 489.00, type: 'expense', category: 'Software/Subscriptions', method: 'UPI Payment', date: '2026-08-04', contextPath: ['Google Play', 'Apps & Subscriptions', 'Entertainment'] },
+        { id: 't_aug_13', desc: 'YouTube Premium Subscription', amount: 89.00, type: 'expense', category: 'Software/Subscriptions', method: 'UPI Payment', date: '2026-08-02', contextPath: ['YouTube', 'Video Streaming', 'Entertainment'] },
+        { id: 't_aug_14', desc: 'Zomato Media Private Limited', amount: 501.00, type: 'expense', category: 'Dining Out', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Zomato Media', 'Food and Drinks', 'Dining Out'] },
+        { id: 't_aug_15', desc: 'Zepto Marketplace Quick Commerce', amount: 774.00, type: 'expense', category: 'Groceries', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Zepto Marketplace', 'Daily Groceries', 'Living'] },
+        { id: 't_aug_16', desc: 'Apple Media Services Refund/Credit', amount: 5.00, type: 'income', category: 'Digital Payments', method: 'UPI Receipt', date: '2026-08-02', contextPath: ['Apple Media', 'Digital Payments', 'Income'] },
+        { id: 't_aug_17', desc: 'Apple Media Services Store', amount: 5.00, type: 'expense', category: 'Software/Subscriptions', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Apple Media Services', 'App Store', 'Entertainment'] },
+        { id: 't_aug_18', desc: 'M S The Engineering Institute Store', amount: 20.00, type: 'expense', category: 'Education', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Engineering Institute', 'Stationery', 'Education'] },
+        { id: 't_aug_19', desc: 'Vivek Anand (Bank/UPI Transfer Received)', amount: 1000.00, type: 'income', category: 'Digital Payments', method: 'UPI Receipt', date: '2026-08-02', contextPath: ['Vivek Anand', 'Family Transfer', 'Income'] }
     ],
     lifeEvents: [
-        { id: 'le_1', name: 'Goa Trip 2026', category: 'Travel', icon: 'bi-airplane-fill', bannerColor: '#3B82F6', startDate: '2026-06-10', endDate: '2026-06-18', tags: ['Travel', 'Friends', 'Beach'] },
-        { id: 'le_2', name: 'Indie Developer Setup', category: 'Tech & Career', icon: 'bi-laptop-fill', bannerColor: '#8B5CF6', startDate: '2026-03-01', endDate: '2026-03-15', tags: ['Hardware', 'Workstation', 'Coding'] },
-        { id: 'le_3', name: 'College Semester 5', category: 'Education', icon: 'bi-book-fill', bannerColor: '#10B981', startDate: '2026-01-10', endDate: '2026-05-20', tags: ['College', 'Books', 'Hostel'] }
+        { id: 'le_1', name: 'Chandigarh Tech & Engineering Sem', category: 'Education', icon: 'bi-mortarboard-fill', bannerColor: '#3B82F6', startDate: '2026-08-01', endDate: '2026-12-15', tags: ['Engineering', 'Amiman Edutech', 'Tech'] },
+        { id: 'le_2', name: 'Digital Creator & Developer Setup', category: 'Tech & Career', icon: 'bi-laptop-fill', bannerColor: '#8B5CF6', startDate: '2026-07-01', endDate: '2026-08-31', tags: ['Spotify', 'YouTube', 'Google Play'] }
     ],
     subscriptions: [
-        { id: 'sub_1', serviceName: 'Netflix Premium', cost: 19.99, billingCycle: 'monthly', nextBillingDate: '2026-08-18', usageStatus: 'active', category: 'Entertainment' },
-        { id: 'sub_2', serviceName: 'Adobe Creative Cloud', cost: 54.99, billingCycle: 'monthly', nextBillingDate: '2026-08-22', usageStatus: 'unused', category: 'Software/Subscriptions' },
-        { id: 'sub_3', serviceName: 'GitHub Copilot', cost: 10.00, billingCycle: 'monthly', nextBillingDate: '2026-08-28', usageStatus: 'active', category: 'Software/Subscriptions' }
+        { id: 'sub_1', serviceName: 'Spotify India Pvt Ltd', cost: 69.00, billingCycle: 'monthly', nextBillingDate: '2026-09-05', usageStatus: 'active', category: 'Entertainment' },
+        { id: 'sub_2', serviceName: 'YouTube Premium', cost: 89.00, billingCycle: 'monthly', nextBillingDate: '2026-09-02', usageStatus: 'active', category: 'Entertainment' },
+        { id: 'sub_3', serviceName: 'Google Play Pass', cost: 489.00, billingCycle: 'monthly', nextBillingDate: '2026-09-04', usageStatus: 'active', category: 'Software/Subscriptions' }
     ],
     budgets: [
-        { id: 'b1', category: 'Groceries', limit: 400 },
-        { id: 'b2', category: 'Dining Out', limit: 300 },
-        { id: 'b3', category: 'Software/Subscriptions', limit: 150 },
-        { id: 'b4', category: 'Transport', limit: 100 }
+        { id: 'b1', category: 'Groceries', limit: 5000 },
+        { id: 'b2', category: 'Dining Out', limit: 4000 },
+        { id: 'b3', category: 'Services', limit: 2500 },
+        { id: 'b4', category: 'Software/Subscriptions', limit: 1500 },
+        { id: 'b5', category: 'Education', limit: 2000 }
     ],
     savingsGoals: [
-        { id: 'g1', name: 'Emergency Safety Reserve', target: 10000, current: 7500 },
-        { id: 'g2', name: 'Japan & Alps Expedition', target: 6000, current: 4200 },
-        { id: 'g3', name: 'Tesla Cybercab Fund', target: 45000, current: 18500 }
+        { id: 'g1', name: 'IDFC FIRST Reserve (xx6487)', target: 100000, current: 68500 },
+        { id: 'g2', name: 'Engineering & Project Fund', target: 50000, current: 32000 }
     ],
     creditCards: [
         { id: 'c1', name: 'Apple Card (Goldman Sachs)', limit: 8000, balance: 1450, dueDate: '2026-07-15' },
