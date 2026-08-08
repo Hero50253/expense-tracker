@@ -115,11 +115,12 @@ router.post('/login', async (req, res) => {
                 { userId: user._id, desc: 'Zomato Media Private Limited', amount: 501.00, type: 'expense', category: 'Dining Out', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Zomato Media', 'Food and Drinks', 'Dining Out'] },
                 { userId: user._id, desc: 'Zepto Marketplace Quick Commerce', amount: 774.00, type: 'expense', category: 'Groceries', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Zepto Marketplace', 'Daily Groceries', 'Living'] },
                 { userId: user._id, desc: 'Apple Media Services Refund/Credit', amount: 5.00, type: 'income', category: 'Digital Payments', method: 'UPI Receipt', date: '2026-08-02', contextPath: ['Apple Media', 'Digital Payments', 'Income'] },
-                { userId: user._id, desc: 'Apple Media Services Store', amount: 5.00, type: 'expense', category: 'Software/Subscriptions', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Apple Media Services', 'App Store', 'Entertainment'] },
                 { userId: user._id, desc: 'M S The Engineering Institute Store', amount: 20.00, type: 'expense', category: 'Education', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Engineering Institute', 'Stationery', 'Education'] },
                 { userId: user._id, desc: 'Vivek Anand (Bank/UPI Transfer Received)', amount: 1000.00, type: 'income', category: 'Digital Payments', method: 'UPI Receipt', date: '2026-08-02', contextPath: ['Vivek Anand', 'Family Transfer', 'Income'] }
             ];
             await Transaction.insertMany(seedTxs).catch(e => console.warn('Login seed error:', e.message));
+        }
+
         if (!process.env.JWT_SECRET) {
             console.error('FATAL: JWT_SECRET environment variable is missing.');
             return res.status(500).json({ message: 'Server configuration error: JWT_SECRET missing' });

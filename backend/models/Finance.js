@@ -125,15 +125,6 @@ const SettlementSchema = new mongoose.Schema({
     date: { type: String, required: true }
 });
 
-module.exports = {
-    Transaction: mongoose.model('Transaction', TransactionSchema),
-    LifeEvent: mongoose.model('LifeEvent', LifeEventSchema),
-    Subscription: mongoose.model('Subscription', SubscriptionSchema),
-    Merchant: mongoose.model('Merchant', MerchantSchema),
-    Budget: mongoose.model('Budget', BudgetSchema),
-    CreditCard: mongoose.model('CreditCard', CreditCardSchema),
-    Emi: mongoose.model('Emi', EmiSchema),
-    Friend: mongoose.model('Friend', FriendSchema),
 // --- Statement Batch Ingestion Model ---
 const StatementSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
