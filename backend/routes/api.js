@@ -393,9 +393,100 @@ router.delete('/subscriptions/:id', auth, async (req, res) => {
     }
 });
 
+// ============================================================
+// SMART TRANSACTION UNDERSTANDING & AI CATEGORIZATION ENGINE
+// ============================================================
+
+const MERCHANT_INTELLIGENCE_MAP = [
+    { patterns: [/swiggy instamart/i], merchant: 'Swiggy Instamart', cat: 'Groceries', desc: 'Quick grocery delivery from Swiggy Instamart', memory: '🛒 Daily Groceries', icon: 'bi-basket-fill' },
+    { patterns: [/swiggy/i], merchant: 'Swiggy', cat: 'Dining Out', desc: 'Food order from Swiggy', memory: '🍕 Food & Hangouts', icon: 'bi-bag-heart-fill' },
+    { patterns: [/zomato/i], merchant: 'Zomato', cat: 'Dining Out', desc: 'Food delivery from Zomato', memory: '🍕 Food & Hangouts', icon: 'bi-fire' },
+    { patterns: [/dominos/i], merchant: 'Dominos Pizza', cat: 'Dining Out', desc: 'Pizza order from Dominos', memory: '🍕 Food & Hangouts', icon: 'bi-pie-chart-fill' },
+    { patterns: [/starbucks|blue bottle|cafe|coffee|nescafe/i], merchant: 'Cafe & Coffee', cat: 'Dining Out', desc: 'Artisanal coffee & cafe brew', memory: '☕ Coffee & Work', icon: 'bi-cup-hot-fill' },
+    { patterns: [/zepto/i], merchant: 'Zepto Marketplace', cat: 'Groceries', desc: 'Quick grocery delivery from Zepto', memory: '🛒 Daily Groceries', icon: 'bi-lightning-charge-fill' },
+    { patterns: [/blinkit|grofers/i], merchant: 'Blinkit', cat: 'Groceries', desc: 'Instant grocery essentials from Blinkit', memory: '🛒 Daily Groceries', icon: 'bi-cart-check-fill' },
+    { patterns: [/dmart|bigbasket|instamart|whole foods|vijay kumar/i], merchant: 'Fresh Grocery Market', cat: 'Groceries', desc: 'Pantry & fresh market restock', memory: '🛒 Daily Groceries', icon: 'bi-cart4' },
+    { patterns: [/engineering institute|amiman edutech|stationery store|tuition|college|exam|books/i], merchant: 'The Engineering Institute Stationery Store', cat: 'Education', desc: 'Stationery purchase for studies', memory: '🎓 Semester 5', icon: 'bi-mortarboard-fill' },
+    { patterns: [/spotify/i], merchant: 'Spotify India Pvt Ltd', cat: 'Software/Subscriptions', desc: 'Music streaming subscription from Spotify', memory: '🎵 Subscriptions', icon: 'bi-music-note-beamed' },
+    { patterns: [/youtube/i], merchant: 'YouTube Premium', cat: 'Software/Subscriptions', desc: 'Video streaming subscription from YouTube', memory: '🎵 Subscriptions', icon: 'bi-play-circle-fill' },
+    { patterns: [/google play/i], merchant: 'Google Play', cat: 'Software/Subscriptions', desc: 'App & cloud storage subscription', memory: '📱 Digital Services', icon: 'bi-google' },
+    { patterns: [/apple media|apple.com|app store|itunes/i], merchant: 'Apple Media Services', cat: 'Software/Subscriptions', desc: 'Apple ecosystem digital services', memory: ' Apple Ecosystem', icon: 'bi-apple' },
+    { patterns: [/netflix/i], merchant: 'Netflix', cat: 'Software/Subscriptions', desc: 'Entertainment streaming subscription', memory: '🎬 Movie Nights', icon: 'bi-film' },
+    { patterns: [/amazon|flipkart|myntra|swagapp|agansel/i], merchant: 'Amazon & Shopping', cat: 'Shopping', desc: 'Lifestyle & tech shopping order', memory: '📦 Workstation & Living', icon: 'bi-bag-fill' },
+    { patterns: [/blue dart|delhivery|dhl|fedex|courier/i], merchant: 'Blue Dart Express Limited', cat: 'Services', desc: 'Logistics shipment with Blue Dart', memory: '📦 Courier & Services', icon: 'bi-box-seam-fill' },
+    { patterns: [/indigo|flight|air india|vistara|goa|trip|hotel|airbnb|moustache/i], merchant: 'IndiGo Airlines & Travel', cat: 'Travel', desc: 'Flight & travel lodging', memory: '💜 Goa Trip 2026', icon: 'bi-airplane-fill' },
+    { patterns: [/uber|ola|rapido|metro|transit|toll/i], merchant: 'Urban Mobility', cat: 'Transport', desc: 'Commute & city rideshare transit', memory: '🚕 City Commute', icon: 'bi-car-front-fill' },
+    { patterns: [/slice/i], merchant: 'Slice Credit', cat: 'EMIs & Repayments', desc: 'Credit card bill settlement to Slice', memory: '💳 Debt & Credit', icon: 'bi-credit-card-2-front-fill' },
+    { patterns: [/lazypay|lazy pay/i], merchant: 'LazyPay', cat: 'EMIs & Repayments', desc: 'BNPL credit repayment to LazyPay', memory: '💳 Debt & Credit', icon: 'bi-clock-history' },
+    { patterns: [/snapmint/i], merchant: 'Snapmint Financial Services', cat: 'EMIs & Repayments', desc: 'Monthly equipment installment EMI', memory: '💳 Debt & Credit', icon: 'bi-wallet-fill' },
+    { patterns: [/steam|playstation|sony|xbox|gaming/i], merchant: 'Gaming & Interactive', cat: 'Entertainment', desc: 'Digital video game purchase', memory: '🖥 Gaming Setup', icon: 'bi-controller' },
+    { patterns: [/keychron|macbook|dell|lenovo|keyboard|monitor|gpu/i], merchant: 'Tech Hardware Studio', cat: 'Electronics', desc: 'Developer workstation hardware upgrade', memory: '🖥 Developer Setup', icon: 'bi-laptop-fill' }
+];
+
+function analyzeTransactionIntelligence(rawString, amount, isCredit, txDate) {
+    let matched = null;
+    for (const rule of MERCHANT_INTELLIGENCE_MAP) {
+        if (rule.patterns.some(p => p.test(rawString))) {
+            matched = rule;
+            break;
+        }
+    }
+
+    // Extract person name if UPI transfer
+    let personName = '';
+    const upiPersonMatch = rawString.match(/(?:armaan|vivek|ashish|keshav|meenu|ananya|shakshi|partho|dheeraj|varinder|bhanu|jaydeb|harsh)\s*[a-zA-Z]*/i);
+    if (upiPersonMatch) {
+        personName = upiPersonMatch[0].trim();
+    }
+
+    let merchant = matched ? matched.merchant : '';
+    let category = matched ? matched.cat : (isCredit ? 'Income' : 'General Expense');
+    let memoryTag = matched ? matched.memory : (isCredit ? '💸 Inbound Funds' : '✨ Financial Life');
+    let icon = matched ? matched.icon : (isCredit ? 'bi-arrow-down-left-circle-fill' : 'bi-credit-card-fill');
+    let desc = '';
+
+    if (isCredit) {
+        merchant = personName || merchant || 'Inbound Transfer';
+        category = 'Digital Payments';
+        desc = personName ? `UPI Transfer received from ${personName}` : (matched ? matched.desc : 'Inbound credit payment');
+        memoryTag = personName ? '💸 Friends & Settlements' : '💸 Capital Inflow';
+    } else if (matched) {
+        desc = matched.desc;
+    } else if (personName) {
+        merchant = personName;
+        category = 'Digital Payments';
+        desc = `UPI Payment sent to ${personName}`;
+        memoryTag = '💸 Friends & Transfers';
+    } else {
+        // Clean out raw OCR junk tokens
+        let clean = rawString
+            .replace(/UPI payment|UPI receipt|Debit Card|Single Transfer|Online payment|Others/gi, '')
+            .replace(/Aug \d{4}|Jul \d{4}|Jun \d{4}|May \d{4}|\d{2}\s+[A-Za-z]{3}\s+\d{2,4}/gi, '')
+            .replace(/(?:Services|Food and Drinks|Shopping|Education|Entertainment|Grocery|Digital Payments|Self Transfer|Interests & Dividends|Loan EMI|Travel|Home expenses)/gi, '')
+            .replace(/(?:[+\-]?\s*(?:₹|Rs\.?|INR|\$)?\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})|\d+(?:\.\d{2}))/gi, '')
+            .replace(/\b\d{10,16}\b/g, '')
+            .replace(/UPI\/[A-Z0-9/._-]+/gi, '')
+            .replace(/[^a-zA-Z0-9\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        merchant = clean.length > 2 ? clean.slice(0, 35) : 'Verified Merchant';
+        desc = `Purchase with ${merchant}`;
+    }
+
+    return {
+        merchant,
+        category,
+        desc,
+        memoryTag,
+        icon,
+        confidence: matched ? 0.98 : 0.85
+    };
+}
+
 // --- Helper: Ultra-Flexible Bank Statement & Table Parser ---
-function parseStatementLines(rawText, defaultMethod = 'Bank Statement') {
-    const dateRegex = /\b(\d{2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2}(?:\s+\d{2}:\d{2})?|\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/]\d{2}[-/]\d{2})\b/gi;
+function parseStatementLines(rawText, defaultMethod = 'IDFC First Bank') {
+    const dateRegex = /\b(\d{2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*,?\s+\d{2,4}|\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4})\b/gi;
 
     // Pre-process: insert newlines before every Date stamp so multiline table text doesn't merge dates onto amount lines
     let formattedText = rawText.replace(dateRegex, '\n$1');
@@ -407,7 +498,7 @@ function parseStatementLines(rawText, defaultMethod = 'Bank Statement') {
     let currentBlock = [];
 
     rawLines.forEach(line => {
-        if (/^(Date and Time|Value Date|Transaction Details|Ref\/Cheque|Withdrawals|Deposits|Balance|Opening Balance|REGISTERED OFFICE|IDFC FIRST BANK)/i.test(line)) {
+        if (/^(Date|Smart Summary|Customer ID|Filter|Accounts|Date Range|Transactions Based|Important message|Security tips|Contact us|Page \d+|--)/i.test(line)) {
             return;
         }
 
@@ -427,14 +518,10 @@ function parseStatementLines(rawText, defaultMethod = 'Bank Statement') {
 
     blocks.forEach((blockText, idx) => {
         if (blockText.length < 5) return;
+        if (/^\d{1,3}(?:,\d{3})*(?:\.\d{2})?\s*(?:CR|DR)?$/i.test(blockText.trim())) return;
 
-        // Skip standalone balance lines at bottom of statement e.g. "175,221.61 CR"
-        if (/^\d{1,3}(?:,\d{3})*(?:\.\d{2})?\s*(?:CR|DR)?$/i.test(blockText.trim())) {
-            return;
-        }
-
-        const isDebit = /UPI\/DR|WITHDRAWAL|DEBIT|Sent using Paytm UPI|MandateExecute|Pay request|paymentlink/i.test(blockText);
-        const isCredit = /UPI\/CR|DEPOSIT|CREDIT|RECEIVED/i.test(blockText);
+        const isReceipt = /receipt|\+|\bCR\b|deposited|interest credit/i.test(blockText);
+        const isIncome = isReceipt && !/Debit|withdrawn|UPI payment/i.test(blockText);
 
         const cleanForAmount = blockText
             .replace(dateRegex, '')
@@ -462,17 +549,18 @@ function parseStatementLines(rawText, defaultMethod = 'Bank Statement') {
         }
 
         if (amounts.length === 0) return;
-        const txAmount = amounts[0];
+        const txAmount = amounts[amounts.length - 1]; // In statements, the last number in the row is the transaction amount
 
         const dateMatch = blockText.match(dateRegex);
         let txDate = new Date().toISOString().split('T')[0];
         if (dateMatch) {
-            const dStr = dateMatch[0];
+            const dStr = dateMatch[0].replace(/,/g, '');
             const parts = dStr.trim().split(/\s+/);
             if (parts.length >= 3) {
                 const day = parts[0].padStart(2, '0');
                 const monthName = parts[1].slice(0, 3);
-                const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+                let year = parts[2];
+                if (year.length === 2) year = '20' + year;
                 const months = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
                 if (months[monthName]) {
                     txDate = `${year}-${months[monthName]}-${day}`;
@@ -480,52 +568,19 @@ function parseStatementLines(rawText, defaultMethod = 'Bank Statement') {
             }
         }
 
-        let merchantName = '';
-        const upiNameMatch = blockText.match(/UPI\/(?:DR|CR)\/\d+\/([^/]+)/i);
-        if (upiNameMatch && upiNameMatch[1]) {
-            merchantName = upiNameMatch[1].trim();
-        }
-
-        if (!merchantName) {
-            if (/youtube/i.test(blockText)) merchantName = 'YouTube Subscription';
-            else if (/spotify/i.test(blockText)) merchantName = 'Spotify Subscription';
-            else if (/dominos/i.test(blockText)) merchantName = 'Dominos Pizza';
-            else if (/nescafe/i.test(blockText)) merchantName = 'Nescafe Coffee';
-            else if (/slice/i.test(blockText)) merchantName = 'Slice Repayment';
-            else if (/lazypay/i.test(blockText)) merchantName = 'LazyPay Repayment';
-            else if (/snapmint/i.test(blockText)) merchantName = 'Snapmint Payment';
-            else {
-                merchantName = blockText
-                    .replace(dateRegex, '')
-                    .replace(/\b\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?\s*(?:CR|DR)?\b/gi, '')
-                    .replace(/(?:Ref|Cheque|Transaction|Details|UPI|DR|CR)\s*[:#\-_]?/gi, '')
-                    .replace(/[^a-zA-Z0-9\s]/g, ' ')
-                    .replace(/\s+/g, ' ')
-                    .trim() || `Bank Entry #${idx + 1}`;
-            }
-        }
-
-        let cat = isCredit ? 'Income' : 'Shopping';
-        if (/slice|lazypay|snapmint|emi|repay/i.test(blockText)) {
-            cat = 'EMIs & Repayments';
-        } else if (/youtube|spotify|netflix|adobe/i.test(blockText)) {
-            cat = 'Software/Subscriptions';
-        } else if (/dominos|nescafe|swiggy|zomato|starbucks/i.test(blockText)) {
-            cat = 'Dining Out';
-        } else if (/anju|harvin|shalini|vivek|keshav|akbar|devitra|transfer|upi/i.test(blockText)) {
-            cat = isCredit ? 'UPI Transfer (Received)' : 'UPI Transfer (Sent)';
-        }
-
-        const isIncome = isCredit || (!isDebit && /deposit|credit|received/i.test(blockText));
+        const intel = analyzeTransactionIntelligence(blockText, txAmount, isIncome, txDate);
 
         parsed.push({
-            desc: merchantName,
+            desc: intel.merchant,
+            cleanDesc: intel.desc,
             amount: txAmount,
             type: isIncome ? 'income' : 'expense',
-            category: cat,
-            method: defaultMethod,
+            category: intel.category,
+            memoryTag: intel.memoryTag,
+            icon: intel.icon,
+            method: isIncome ? 'UPI Receipt' : 'UPI Payment',
             date: txDate,
-            contextPath: [merchantName, cat, isIncome ? 'Income' : 'UPI Experience'],
+            contextPath: [intel.merchant, intel.category, intel.memoryTag],
             source: 'import'
         });
     });

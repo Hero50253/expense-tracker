@@ -23,29 +23,29 @@ const ExpenseContext = createContext();
 const DEFAULT_STATE = {
     theme: 'light',
     currency: '₹',
-    apiUrl: (import.meta && import.meta.env && import.meta.env.VITE_API_URL) || 'http://localhost:3000',
+    apiUrl: (import.meta && import.meta.env && import.meta.env.VITE_API_URL) || 'https://premiumexpenseos-backend.onrender.com',
     token: 'amritansh_session_2026',
     userEmail: 'amritanshanand@idfcfirst.bank',
     transactions: [
-        { id: 't_aug_1', desc: 'Blue Dart Express Limited', amount: 1028.00, type: 'expense', category: 'Services', method: 'UPI Payment', date: '2026-08-07', contextPath: ['Blue Dart Express', 'Logistics & Courier', 'Services'] },
-        { id: 't_aug_2', desc: 'Zomato Food Delivery', amount: 414.00, type: 'expense', category: 'Dining Out', method: 'UPI Payment', date: '2026-08-07', contextPath: ['Zomato', 'Food and Drinks', 'Lifestyle'] },
-        { id: 't_aug_3', desc: 'Armaan S/I (UPI Transfer Received)', amount: 200.00, type: 'income', category: 'Digital Payments', method: 'UPI Receipt', date: '2026-08-07', contextPath: ['Armaan S/I', 'UPI Received', 'Income'] },
-        { id: 't_aug_4', desc: 'Swiggy Instamart Quick Grocery', amount: 190.00, type: 'expense', category: 'Groceries', method: 'UPI Payment', date: '2026-08-06', contextPath: ['Swiggy Instamart', 'Quick Commerce', 'Groceries'] },
-        { id: 't_aug_5', desc: 'Meenu Bhandari Dining', amount: 255.00, type: 'expense', category: 'Dining Out', method: 'UPI Payment', date: '2026-08-06', contextPath: ['Meenu Bhandari', 'Food and Drinks', 'Dining Out'] },
-        { id: 't_aug_6', desc: 'Amiman Edutech Pvt Ltd Course', amount: 539.00, type: 'expense', category: 'Education', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Amiman Edutech', 'Tech Education', 'Career Growth'] },
-        { id: 't_aug_7', desc: 'Agansel Shopping', amount: 299.00, type: 'expense', category: 'Shopping', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Agansel', 'Lifestyle Shopping', 'Shopping'] },
-        { id: 't_aug_8', desc: 'Zomato Limited Meal', amount: 552.00, type: 'expense', category: 'Dining Out', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Zomato Limited', 'Food and Drinks', 'Dining Out'] },
-        { id: 't_aug_9', desc: 'Amritansh Anand UPI Test', amount: 2.00, type: 'expense', category: 'Digital Payments', method: 'UPI Payment', date: '2026-08-05', contextPath: ['UPI Verification', 'Digital Payments'] },
-        { id: 't_aug_10', desc: 'Spotify India Pvt Ltd Music', amount: 69.00, type: 'expense', category: 'Software/Subscriptions', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Spotify India', 'Audio Streaming', 'Entertainment'] },
-        { id: 't_aug_11', desc: 'Mr Vijay Kumar Fresh Market', amount: 2170.00, type: 'expense', category: 'Groceries', method: 'UPI Payment', date: '2026-08-04', contextPath: ['Mr Vijay Kumar', 'Pantry & Market', 'Groceries'] },
-        { id: 't_aug_12', desc: 'Google Play Apps & Games', amount: 489.00, type: 'expense', category: 'Software/Subscriptions', method: 'UPI Payment', date: '2026-08-04', contextPath: ['Google Play', 'Apps & Subscriptions', 'Entertainment'] },
-        { id: 't_aug_13', desc: 'YouTube Premium Subscription', amount: 89.00, type: 'expense', category: 'Software/Subscriptions', method: 'UPI Payment', date: '2026-08-02', contextPath: ['YouTube', 'Video Streaming', 'Entertainment'] },
-        { id: 't_aug_14', desc: 'Zomato Media Private Limited', amount: 501.00, type: 'expense', category: 'Dining Out', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Zomato Media', 'Food and Drinks', 'Dining Out'] },
-        { id: 't_aug_15', desc: 'Zepto Marketplace Quick Commerce', amount: 774.00, type: 'expense', category: 'Groceries', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Zepto Marketplace', 'Daily Groceries', 'Living'] },
-        { id: 't_aug_16', desc: 'Apple Media Services Refund/Credit', amount: 5.00, type: 'income', category: 'Digital Payments', method: 'UPI Receipt', date: '2026-08-02', contextPath: ['Apple Media', 'Digital Payments', 'Income'] },
-        { id: 't_aug_17', desc: 'Apple Media Services Store', amount: 5.00, type: 'expense', category: 'Software/Subscriptions', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Apple Media Services', 'App Store', 'Entertainment'] },
-        { id: 't_aug_18', desc: 'M S The Engineering Institute Store', amount: 20.00, type: 'expense', category: 'Education', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Engineering Institute', 'Stationery', 'Education'] },
-        { id: 't_aug_19', desc: 'Vivek Anand (Bank/UPI Transfer Received)', amount: 1000.00, type: 'income', category: 'Digital Payments', method: 'UPI Receipt', date: '2026-08-02', contextPath: ['Vivek Anand', 'Family Transfer', 'Income'] }
+        { id: 't_aug_1', desc: 'Blue Dart Express Limited', cleanDesc: 'Logistics shipment with Blue Dart', amount: 1028.00, type: 'expense', category: 'Services', memoryTag: '📦 Courier & Services', icon: 'bi-box-seam-fill', method: 'UPI Payment', date: '2026-08-07', contextPath: ['Blue Dart Express', 'Services'] },
+        { id: 't_aug_2', desc: 'Zomato', cleanDesc: 'Food delivery from Zomato', amount: 414.00, type: 'expense', category: 'Dining Out', memoryTag: '🍕 Food & Hangouts', icon: 'bi-egg-fried', method: 'UPI Payment', date: '2026-08-07', contextPath: ['Zomato', 'Dining Out'] },
+        { id: 't_aug_3', desc: 'Armaan S/I', cleanDesc: 'UPI Transfer received from Armaan S/I', amount: 200.00, type: 'income', category: 'Digital Payments', memoryTag: '💸 Friends & Settlements', icon: 'bi-arrow-down-left-circle-fill', method: 'UPI Receipt', date: '2026-08-07', contextPath: ['Armaan S/I', 'Income'] },
+        { id: 't_aug_4', desc: 'Swiggy Instamart', cleanDesc: 'Quick grocery delivery from Swiggy Instamart', amount: 190.00, type: 'expense', category: 'Groceries', memoryTag: '🛒 Daily Groceries', icon: 'bi-basket2-fill', method: 'UPI Payment', date: '2026-08-06', contextPath: ['Swiggy Instamart', 'Groceries'] },
+        { id: 't_aug_5', desc: 'Meenu Bhandari', cleanDesc: 'Dining & cafe bill with Meenu Bhandari', amount: 255.00, type: 'expense', category: 'Dining Out', memoryTag: '🍕 Food & Hangouts', icon: 'bi-egg-fried', method: 'UPI Payment', date: '2026-08-06', contextPath: ['Meenu Bhandari', 'Dining Out'] },
+        { id: 't_aug_6', desc: 'Amiman Edutech Pvt Ltd', cleanDesc: 'Tech engineering curriculum course', amount: 539.00, type: 'expense', category: 'Education', memoryTag: '🎓 Semester 5', icon: 'bi-mortarboard-fill', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Amiman Edutech', 'Education'] },
+        { id: 't_aug_7', desc: 'Agansel Shopping', cleanDesc: 'Lifestyle apparel & accessories order', amount: 299.00, type: 'expense', category: 'Shopping', memoryTag: '📦 Lifestyle & Living', icon: 'bi-bag-heart-fill', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Agansel', 'Shopping'] },
+        { id: 't_aug_8', desc: 'Zomato Limited', cleanDesc: 'Dinner & evening meal from Zomato', amount: 552.00, type: 'expense', category: 'Dining Out', memoryTag: '🍕 Food & Hangouts', icon: 'bi-egg-fried', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Zomato Limited', 'Dining Out'] },
+        { id: 't_aug_9', desc: 'Amritansh Anand', cleanDesc: 'UPI Verification micro-transfer', amount: 2.00, type: 'expense', category: 'Digital Payments', memoryTag: '📱 Digital Payments', icon: 'bi-phone', method: 'UPI Payment', date: '2026-08-05', contextPath: ['UPI Verification', 'Digital Payments'] },
+        { id: 't_aug_10', desc: 'Spotify India Pvt Ltd', cleanDesc: 'Music streaming subscription from Spotify', amount: 69.00, type: 'expense', category: 'Software/Subscriptions', memoryTag: '🎵 Subscriptions', icon: 'bi-music-note-beamed', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Spotify India', 'Subscriptions'] },
+        { id: 't_aug_11', desc: 'Mr Vijay Kumar', cleanDesc: 'Pantry & grocery market restock', amount: 2170.00, type: 'expense', category: 'Groceries', memoryTag: '🛒 Daily Groceries', icon: 'bi-basket2-fill', method: 'UPI Payment', date: '2026-08-04', contextPath: ['Mr Vijay Kumar', 'Groceries'] },
+        { id: 't_aug_12', desc: 'Google Play', cleanDesc: 'App & developer cloud pass subscription', amount: 489.00, type: 'expense', category: 'Software/Subscriptions', memoryTag: '📱 Digital Services', icon: 'bi-google', method: 'UPI Payment', date: '2026-08-04', contextPath: ['Google Play', 'Subscriptions'] },
+        { id: 't_aug_13', desc: 'YouTube Premium', cleanDesc: 'Video streaming subscription from YouTube', amount: 89.00, type: 'expense', category: 'Software/Subscriptions', memoryTag: '🎵 Subscriptions', icon: 'bi-play-circle-fill', method: 'UPI Payment', date: '2026-08-02', contextPath: ['YouTube', 'Subscriptions'] },
+        { id: 't_aug_14', desc: 'Zomato Media Private Limited', cleanDesc: 'Weekend dining order from Zomato', amount: 501.00, type: 'expense', category: 'Dining Out', memoryTag: '🍕 Food & Hangouts', icon: 'bi-egg-fried', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Zomato Media', 'Dining Out'] },
+        { id: 't_aug_15', desc: 'Zepto Marketplace', cleanDesc: 'Quick grocery delivery from Zepto', amount: 774.00, type: 'expense', category: 'Groceries', memoryTag: '🛒 Daily Groceries', icon: 'bi-basket2-fill', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Zepto Marketplace', 'Groceries'] },
+        { id: 't_aug_16', desc: 'Apple Media Services', cleanDesc: 'App Store credit & refund received', amount: 5.00, type: 'income', category: 'Digital Payments', memoryTag: ' Apple Ecosystem', icon: 'bi-apple', method: 'UPI Receipt', date: '2026-08-02', contextPath: ['Apple Media', 'Income'] },
+        { id: 't_aug_17', desc: 'Apple Media Services', cleanDesc: 'iCloud storage monthly backup tier', amount: 5.00, type: 'expense', category: 'Software/Subscriptions', memoryTag: ' Apple Ecosystem', icon: 'bi-apple', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Apple Media Services', 'Subscriptions'] },
+        { id: 't_aug_18', desc: 'The Engineering Institute Stationery Store', cleanDesc: 'Stationery purchase for studies', amount: 20.00, type: 'expense', category: 'Education', memoryTag: '🎓 Semester 5', icon: 'bi-mortarboard-fill', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Engineering Institute', 'Education'] },
+        { id: 't_aug_19', desc: 'Vivek Anand', cleanDesc: 'UPI Transfer received from Vivek Anand', amount: 1000.00, type: 'income', category: 'Digital Payments', memoryTag: '💸 Family & Support', icon: 'bi-arrow-down-left-circle-fill', method: 'UPI Receipt', date: '2026-08-02', contextPath: ['Vivek Anand', 'Income'] }
     ],
     lifeEvents: [
         { id: 'le_1', name: 'Chandigarh Tech & Engineering Sem', category: 'Education', icon: 'bi-mortarboard-fill', bannerColor: '#3B82F6', startDate: '2026-08-01', endDate: '2026-12-15', tags: ['Engineering', 'Amiman Edutech', 'Tech'] },
@@ -1059,6 +1059,32 @@ function CustomTooltip({ active, payload, label, currency }) {
 }
 
 // ============================================================
+// CATEGORY VISUAL TOKENS & METADATA
+// ============================================================
+const CATEGORY_META = {
+    'Education': { color: '#10B981', gradient: 'linear-gradient(135deg, #10B981, #059669)', icon: 'bi-mortarboard-fill' },
+    'Dining Out': { color: '#F97316', gradient: 'linear-gradient(135deg, #FB923C, #EA580C)', icon: 'bi-egg-fried' },
+    'Food & Dining': { color: '#F97316', gradient: 'linear-gradient(135deg, #FB923C, #EA580C)', icon: 'bi-egg-fried' },
+    'Groceries': { color: '#F59E0B', gradient: 'linear-gradient(135deg, #FBBF24, #D97706)', icon: 'bi-basket2-fill' },
+    'Software/Subscriptions': { color: '#8B5CF6', gradient: 'linear-gradient(135deg, #A78BFA, #7C3AED)', icon: 'bi-music-note-beamed' },
+    'Services': { color: '#6366F1', gradient: 'linear-gradient(135deg, #818CF8, #4F46E5)', icon: 'bi-box-seam-fill' },
+    'Travel': { color: '#0EA5E9', gradient: 'linear-gradient(135deg, #38BDF8, #0284C7)', icon: 'bi-airplane-fill' },
+    'Transport': { color: '#06B6D4', gradient: 'linear-gradient(135deg, #22D3EE, #0891B2)', icon: 'bi-car-front-fill' },
+    'Shopping': { color: '#EC4899', gradient: 'linear-gradient(135deg, #F472B6, #DB2777)', icon: 'bi-bag-heart-fill' },
+    'Digital Payments': { color: '#10B981', gradient: 'linear-gradient(135deg, #34D399, #059669)', icon: 'bi-arrow-down-left-circle-fill' },
+    'Income': { color: '#10B981', gradient: 'linear-gradient(135deg, #34D399, #059669)', icon: 'bi-arrow-down-left-circle-fill' },
+    'EMIs & Repayments': { color: '#F43F5E', gradient: 'linear-gradient(135deg, #FB7185, #E11D48)', icon: 'bi-credit-card-2-front-fill' }
+};
+
+function getCategoryMeta(cat) {
+    return CATEGORY_META[cat] || {
+        color: '#6366F1',
+        gradient: 'linear-gradient(135deg, #818CF8, #4F46E5)',
+        icon: 'bi-stars'
+    };
+}
+
+// ============================================================
 // TRANSACTIONS (LEDGER) VIEW & RECEIPT DRAWER
 // ============================================================
 function TransactionsView() {
@@ -1067,6 +1093,7 @@ function TransactionsView() {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [selectedTx, setSelectedTx] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
 
     // New transaction form
     const [newDesc, setNewDesc] = useState('');
@@ -1075,10 +1102,12 @@ function TransactionsView() {
     const [newCat, setNewCat] = useState('Groceries');
     const [newMethod, setNewMethod] = useState('Credit Card');
 
-    const categories = ['All', 'Salary', 'Rent & Housing', 'Software/Subscriptions', 'Groceries', 'Dining Out', 'Health', 'Transport', 'Side Hustle'];
+    const categories = ['All', 'Education', 'Dining Out', 'Groceries', 'Software/Subscriptions', 'Services', 'Shopping', 'Travel', 'Digital Payments', 'EMIs & Repayments'];
 
     const filtered = state.transactions.filter(t => {
-        const matchesSearch = t.desc.toLowerCase().includes(search.toLowerCase());
+        const matchesSearch = (t.desc || '').toLowerCase().includes(search.toLowerCase()) ||
+                              (t.cleanDesc || '').toLowerCase().includes(search.toLowerCase()) ||
+                              (t.memoryTag || '').toLowerCase().includes(search.toLowerCase());
         const matchesCat = selectedCategory === 'All' || t.category === selectedCategory;
         return matchesSearch && matchesCat;
     });
@@ -1133,11 +1162,16 @@ function TransactionsView() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">Ledger & Receipts</h1>
-                    <p className="page-subtitle">Granular Expense Log & OCR Digital Scans</p>
+                    <p className="page-subtitle">Apple Wallet & Linear Financial Memory Ledger</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
-                    <i className="bi bi-plus-lg"></i> Record Entry
-                </button>
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button className="btn btn-secondary" onClick={() => setShowImportModal(true)}>
+                        <i className="bi bi-file-earmark-arrow-up-fill"></i> Import Statement
+                    </button>
+                    <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+                        <i className="bi bi-plus-lg"></i> Record Entry
+                    </button>
+                </div>
             </div>
 
             <div className="ledger-container">
@@ -1146,7 +1180,7 @@ function TransactionsView() {
                         <i className="bi bi-search"></i>
                         <input
                             className="search-input"
-                            placeholder="Filter transactions by merchant or note..."
+                            placeholder="Search by merchant, note, or memory tag..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                         />
@@ -1165,39 +1199,74 @@ function TransactionsView() {
                     </div>
                 </div>
 
-                <div className="tx-list" style={{ padding: 'var(--space-2)' }}>
-                    {filtered.map(t => (
-                        <div key={t.id} className="tx-row" onClick={() => setSelectedTx(t)}>
-                            <div className={`tx-icon ${t.type}`}>
-                                <i className={`bi bi-${t.type === 'income' ? 'arrow-down-left' : 'bag-check-fill'}`}></i>
-                            </div>
-                            <div className="tx-info">
-                                <div className="tx-desc">{t.desc}</div>
-                                <div className="tx-meta-row">
-                                    <span className="tx-date">{t.date}</span>
-                                    <span className="tx-pill">{t.category}</span>
-                                    <span className="tx-pill" style={{ background: 'transparent', border: '1px solid var(--border)' }}>
-                                        {t.method}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className={`tx-amount ${t.type}`}>
-                                {t.type === 'income' ? '+' : '-'}{state.currency}{t.amount.toFixed(2)}
-                            </div>
-                            <button
-                                className="icon-btn"
-                                style={{ width: 28, height: 28, border: 'none' }}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteTx(t.id);
-                                }}
-                            >
-                                <i className="bi bi-trash text-danger" style={{ fontSize: 13 }}></i>
-                            </button>
+                <div className="tx-list" style={{ padding: 'var(--space-4)' }}>
+                    {filtered.length === 0 ? (
+                        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
+                            <i className="bi bi-inbox" style={{ fontSize: 32, display: 'block', marginBottom: 8 }}></i>
+                            No transactions found matching your filter.
                         </div>
-                    ))}
+                    ) : (
+                        filtered.map(t => {
+                            const meta = getCategoryMeta(t.category);
+                            return (
+                                <div key={t.id} className="tx-row" onClick={() => setSelectedTx(t)}>
+                                    <div className={`tx-icon ${t.type}`} style={{ background: meta.gradient }}>
+                                        <i className={`bi ${t.icon || meta.icon}`}></i>
+                                    </div>
+                                    <div className="tx-info">
+                                        <div className="tx-desc-line">
+                                            <span className="tx-merchant" title={t.desc}>{t.desc}</span>
+                                            {t.cleanDesc && t.cleanDesc !== t.desc && (
+                                                <span className="tx-clean-desc"> • {t.cleanDesc}</span>
+                                            )}
+                                        </div>
+                                        <div className="tx-meta-row">
+                                            <span className="tx-date">{t.date}</span>
+                                            <span className="tx-pill" style={{ borderColor: meta.color, color: meta.color }}>
+                                                {t.category}
+                                            </span>
+                                            {t.memoryTag && (
+                                                <span className="memory-chip-pill">
+                                                    {t.memoryTag}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className={`tx-amount-col ${t.type}`}>
+                                        <span className="tx-amount-val">
+                                            {t.type === 'income' ? '+' : '-'}{state.currency}{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
+                                    </div>
+                                    <div className="tx-actions">
+                                        <button
+                                            className="icon-btn-subtle"
+                                            title="Inspect Digital Receipt"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedTx(t);
+                                            }}
+                                        >
+                                            <i className="bi bi-receipt"></i>
+                                        </button>
+                                        <button
+                                            className="icon-btn-subtle text-danger"
+                                            title="Delete entry"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteTx(t.id);
+                                            }}
+                                        >
+                                            <i className="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
             </div>
+
+            {showImportModal && <StatementImportModal onClose={() => setShowImportModal(false)} />}
 
             {/* DETAIL DRAWER / MODAL */}
             <AnimatePresence>
@@ -2218,65 +2287,116 @@ function TimelineView() {
                 ))}
             </div>
 
-            {/* Timeline Container */}
+            {/* Group transactions hierarchically by Month & Category */}
             <div className="timeline-container">
-                {filteredEvents.map(evt => {
-                    const chapterTx = state.transactions.filter(t => t.lifeEventId === evt.id || (t.lifeEventName && t.lifeEventName.toLowerCase() === evt.name.toLowerCase()));
-                    const chapterTotal = chapterTx.reduce((acc, t) => acc + t.amount, 0);
+                {(() => {
+                    // Group transactions by YYYY-MM
+                    const monthMap = {};
+                    state.transactions.forEach(t => {
+                        const monthKey = (t.date || '').slice(0, 7) || '2026-08';
+                        if (!monthMap[monthKey]) monthMap[monthKey] = [];
+                        monthMap[monthKey].push(t);
+                    });
 
-                    return (
-                        <div key={evt.id} className="timeline-chapter">
-                            <div className="timeline-chapter-node" style={{ background: evt.bannerColor }}>
-                                <i className={`bi ${evt.icon}`}></i>
+                    const sortedMonths = Object.keys(monthMap).sort((a, b) => b.localeCompare(a));
+
+                    if (sortedMonths.length === 0) {
+                        return (
+                            <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
+                                <i className="bi bi-calendar3" style={{ fontSize: 32, display: 'block', marginBottom: 8 }}></i>
+                                No memory timeline recorded yet. Import a statement or record a transaction!
                             </div>
+                        );
+                    }
 
-                            <div className="timeline-card">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                                    <div>
-                                        <div style={{ fontSize: 11, fontWeight: 700, color: evt.bannerColor, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                                            {evt.category} · {evt.startDate}
-                                        </div>
-                                        <h3 style={{ fontSize: 18, fontWeight: 800, margin: '4px 0 2px 0' }}>{evt.name}</h3>
-                                        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>{evt.description || 'Life chapter milestone & memory collection'}</p>
+                    return sortedMonths.map(mKey => {
+                        const mTx = monthMap[mKey];
+                        const dateObj = new Date(mKey + '-01');
+                        const monthName = isNaN(dateObj.getTime()) ? mKey : dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                        
+                        const mExpense = mTx.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+                        const mIncome = mTx.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+
+                        // Group by Category inside Month
+                        const catMap = {};
+                        mTx.forEach(t => {
+                            const cat = t.category || 'General';
+                            if (!catMap[cat]) catMap[cat] = [];
+                            catMap[cat].push(t);
+                        });
+
+                        return (
+                            <div key={mKey} className="timeline-month-block">
+                                <div className="month-sticky-header">
+                                    <div className="month-title">
+                                        <i className="bi bi-calendar-event-fill" style={{ color: 'var(--accent)' }}></i>
+                                        {monthName}
                                     </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: 16, fontWeight: 800 }}>{state.currency}{chapterTotal.toLocaleString()}</div>
-                                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{chapterTx.length} Memory Entries</span>
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                        <span className="month-summary-badge" style={{ color: '#10B981', background: 'rgba(16,185,129,0.1)' }}>
+                                            +{state.currency}{mIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </span>
+                                        <span className="month-summary-badge" style={{ color: 'var(--text-primary)' }}>
+                                            -{state.currency}{mExpense.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        </span>
                                     </div>
                                 </div>
 
-                                <div className="tx-list" style={{ marginTop: 12 }}>
-                                    {chapterTx.length === 0 ? (
-                                        <div style={{ padding: 12, fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
-                                            No transactions linked to this chapter yet.
-                                        </div>
-                                    ) : (
-                                        chapterTx.map(t => (
-                                            <div key={t.id} className="tx-row" onClick={() => setInspectTx(t)} style={{ cursor: 'pointer' }}>
-                                                <div className="tx-icon expense">
-                                                    <i className="bi bi-stars"></i>
+                                <div className="timeline-tree-container">
+                                    {Object.keys(catMap).map(catName => {
+                                        const catTx = catMap[catName];
+                                        const catMeta = getCategoryMeta(catName);
+                                        const catTotal = catTx.reduce((acc, t) => acc + (t.type === 'income' ? -t.amount : t.amount), 0);
+
+                                        return (
+                                            <div key={catName} className="timeline-branch-group">
+                                                <div className="timeline-branch-header">
+                                                    <span className="branch-tag" style={{ background: catMeta.gradient, color: '#fff' }}>
+                                                        <i className={`bi ${catMeta.icon}`}></i> {catName}
+                                                    </span>
+                                                    <span className="branch-total">
+                                                        {state.currency}{Math.abs(catTotal).toLocaleString(undefined, { minimumFractionDigits: 2 })} ({catTx.length})
+                                                    </span>
                                                 </div>
-                                                <div className="tx-info">
-                                                    {t.contextPath && t.contextPath.length > 0 && (
-                                                        <div className="context-breadcrumb">
-                                                            {t.contextPath.join(' → ')}
+
+                                                <div className="tx-list" style={{ marginTop: 8 }}>
+                                                    {catTx.map(t => (
+                                                        <div key={t.id} className="tx-row" onClick={() => setInspectTx(t)}>
+                                                            <div className={`tx-icon ${t.type}`} style={{ background: catMeta.gradient }}>
+                                                                <i className={`bi ${t.icon || catMeta.icon}`}></i>
+                                                            </div>
+                                                            <div className="tx-info">
+                                                                <div className="tx-desc-line">
+                                                                    <span className="tx-merchant" title={t.desc}>{t.desc}</span>
+                                                                    {t.cleanDesc && t.cleanDesc !== t.desc && (
+                                                                        <span className="tx-clean-desc"> • {t.cleanDesc}</span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="tx-meta-row">
+                                                                    <span className="tx-date">{t.date}</span>
+                                                                    {t.memoryTag && (
+                                                                        <span className="memory-chip-pill">
+                                                                            {t.memoryTag}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <div className={`tx-amount-col ${t.type}`}>
+                                                                <span className="tx-amount-val">
+                                                                    {t.type === 'income' ? '+' : '-'}{state.currency}{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                    <div className="tx-desc">{t.desc}</div>
-                                                    <div className="tx-meta-row">
-                                                        <span className="tx-date">{t.date}</span>
-                                                        <span className="tx-pill">{t.category}</span>
-                                                    </div>
+                                                    ))}
                                                 </div>
-                                                <div className="tx-amount expense">{state.currency}{t.amount}</div>
                                             </div>
-                                        ))
-                                    )}
+                                        );
+                                    })}
                                 </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })
+                })()}
             </div>
 
             {/* MODALS */}
@@ -2647,8 +2767,34 @@ function SubscriptionsView() {
     );
 }
 
-function clientParseStatementLines(rawText, defaultMethod = 'Pasted Statement') {
-    const dateRegex = /\b(\d{2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2}(?:\s+\d{2}:\d{2})?|\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/]\d{2}[-/]\d{2})\b/gi;
+const CLIENT_MERCHANT_MAP = [
+    { patterns: [/swiggy instamart/i], merchant: 'Swiggy Instamart', cat: 'Groceries', desc: 'Quick grocery delivery from Swiggy Instamart', memory: '🛒 Daily Groceries', icon: 'bi-basket-fill' },
+    { patterns: [/swiggy/i], merchant: 'Swiggy', cat: 'Dining Out', desc: 'Food order from Swiggy', memory: '🍕 Food & Hangouts', icon: 'bi-bag-heart-fill' },
+    { patterns: [/zomato/i], merchant: 'Zomato', cat: 'Dining Out', desc: 'Food delivery from Zomato', memory: '🍕 Food & Hangouts', icon: 'bi-fire' },
+    { patterns: [/dominos/i], merchant: 'Dominos Pizza', cat: 'Dining Out', desc: 'Pizza order from Dominos', memory: '🍕 Food & Hangouts', icon: 'bi-pie-chart-fill' },
+    { patterns: [/starbucks|blue bottle|cafe|coffee|nescafe/i], merchant: 'Cafe & Coffee', cat: 'Dining Out', desc: 'Artisanal coffee & cafe brew', memory: '☕ Coffee & Work', icon: 'bi-cup-hot-fill' },
+    { patterns: [/zepto/i], merchant: 'Zepto Marketplace', cat: 'Groceries', desc: 'Quick grocery delivery from Zepto', memory: '🛒 Daily Groceries', icon: 'bi-lightning-charge-fill' },
+    { patterns: [/blinkit|grofers/i], merchant: 'Blinkit', cat: 'Groceries', desc: 'Instant grocery essentials from Blinkit', memory: '🛒 Daily Groceries', icon: 'bi-cart-check-fill' },
+    { patterns: [/dmart|bigbasket|instamart|whole foods|vijay kumar/i], merchant: 'Fresh Grocery Market', cat: 'Groceries', desc: 'Pantry & fresh market restock', memory: '🛒 Daily Groceries', icon: 'bi-cart4' },
+    { patterns: [/engineering institute|amiman edutech|stationery store|tuition|college|exam|books/i], merchant: 'The Engineering Institute Stationery Store', cat: 'Education', desc: 'Stationery purchase for studies', memory: '🎓 Semester 5', icon: 'bi-mortarboard-fill' },
+    { patterns: [/spotify/i], merchant: 'Spotify India Pvt Ltd', cat: 'Software/Subscriptions', desc: 'Music streaming subscription from Spotify', memory: '🎵 Subscriptions', icon: 'bi-music-note-beamed' },
+    { patterns: [/youtube/i], merchant: 'YouTube Premium', cat: 'Software/Subscriptions', desc: 'Video streaming subscription from YouTube', memory: '🎵 Subscriptions', icon: 'bi-play-circle-fill' },
+    { patterns: [/google play/i], merchant: 'Google Play', cat: 'Software/Subscriptions', desc: 'App & cloud storage subscription', memory: '📱 Digital Services', icon: 'bi-google' },
+    { patterns: [/apple media|apple.com|app store|itunes/i], merchant: 'Apple Media Services', cat: 'Software/Subscriptions', desc: 'Apple ecosystem digital services', memory: ' Apple Ecosystem', icon: 'bi-apple' },
+    { patterns: [/netflix/i], merchant: 'Netflix', cat: 'Software/Subscriptions', desc: 'Entertainment streaming subscription', memory: '🎬 Movie Nights', icon: 'bi-film' },
+    { patterns: [/amazon|flipkart|myntra|swagapp|agansel/i], merchant: 'Amazon & Shopping', cat: 'Shopping', desc: 'Lifestyle & tech shopping order', memory: '📦 Workstation & Living', icon: 'bi-bag-fill' },
+    { patterns: [/blue dart|delhivery|dhl|fedex|courier/i], merchant: 'Blue Dart Express Limited', cat: 'Services', desc: 'Logistics shipment with Blue Dart', memory: '📦 Courier & Services', icon: 'bi-box-seam-fill' },
+    { patterns: [/indigo|flight|air india|vistara|goa|trip|hotel|airbnb|moustache/i], merchant: 'IndiGo Airlines & Travel', cat: 'Travel', desc: 'Flight & travel lodging', memory: '💜 Goa Trip 2026', icon: 'bi-airplane-fill' },
+    { patterns: [/uber|ola|rapido|metro|transit|toll/i], merchant: 'Urban Mobility', cat: 'Transport', desc: 'Commute & city rideshare transit', memory: '🚕 City Commute', icon: 'bi-car-front-fill' },
+    { patterns: [/slice/i], merchant: 'Slice Credit', cat: 'EMIs & Repayments', desc: 'Credit card bill settlement to Slice', memory: '💳 Debt & Credit', icon: 'bi-credit-card-2-front-fill' },
+    { patterns: [/lazypay|lazy pay/i], merchant: 'LazyPay', cat: 'EMIs & Repayments', desc: 'BNPL credit repayment to LazyPay', memory: '💳 Debt & Credit', icon: 'bi-clock-history' },
+    { patterns: [/snapmint/i], merchant: 'Snapmint Financial Services', cat: 'EMIs & Repayments', desc: 'Monthly equipment installment EMI', memory: '💳 Debt & Credit', icon: 'bi-wallet-fill' },
+    { patterns: [/steam|playstation|sony|xbox|gaming/i], merchant: 'Gaming & Interactive', cat: 'Entertainment', desc: 'Digital video game purchase', memory: '🖥 Gaming Setup', icon: 'bi-controller' },
+    { patterns: [/keychron|macbook|dell|lenovo|keyboard|monitor|gpu/i], merchant: 'Tech Hardware Studio', cat: 'Electronics', desc: 'Developer workstation hardware upgrade', memory: '🖥 Developer Setup', icon: 'bi-laptop-fill' }
+];
+
+function clientParseStatementLines(rawText, defaultMethod = 'IDFC First Bank') {
+    const dateRegex = /\b(\d{2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*,?\s+\d{2,4}|\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4})\b/gi;
 
     let formattedText = rawText.replace(dateRegex, '\n$1');
     const rawLines = formattedText.split('\n').map(l => l.trim()).filter(Boolean);
@@ -2658,7 +2804,7 @@ function clientParseStatementLines(rawText, defaultMethod = 'Pasted Statement') 
     let currentBlock = [];
 
     rawLines.forEach(line => {
-        if (/^(Date and Time|Value Date|Transaction Details|Ref\/Cheque|Withdrawals|Deposits|Balance|Opening Balance|REGISTERED OFFICE|IDFC FIRST BANK)/i.test(line)) {
+        if (/^(Date|Smart Summary|Customer ID|Filter|Accounts|Date Range|Transactions Based|Important message|Security tips|Contact us|Page \d+|--)/i.test(line)) {
             return;
         }
         const startsWithDate = dateRegex.test(line.slice(0, 30));
@@ -2675,8 +2821,8 @@ function clientParseStatementLines(rawText, defaultMethod = 'Pasted Statement') 
         if (blockText.length < 5) return;
         if (/^\d{1,3}(?:,\d{3})*(?:\.\d{2})?\s*(?:CR|DR)?$/i.test(blockText.trim())) return;
 
-        const isDebit = /UPI\/DR|WITHDRAWAL|DEBIT|Sent using Paytm UPI|MandateExecute|Pay request|paymentlink/i.test(blockText);
-        const isCredit = /UPI\/CR|DEPOSIT|CREDIT|RECEIVED/i.test(blockText);
+        const isReceipt = /receipt|\+|\bCR\b|deposited|interest credit/i.test(blockText);
+        const isIncome = isReceipt && !/Debit|withdrawn|UPI payment/i.test(blockText);
 
         const cleanForAmount = blockText
             .replace(dateRegex, '')
@@ -2703,17 +2849,18 @@ function clientParseStatementLines(rawText, defaultMethod = 'Pasted Statement') 
         }
 
         if (amounts.length === 0) return;
-        const txAmount = amounts[0];
+        const txAmount = amounts[amounts.length - 1];
 
         const dateMatch = blockText.match(dateRegex);
         let txDate = new Date().toISOString().split('T')[0];
         if (dateMatch) {
-            const dStr = dateMatch[0];
+            const dStr = dateMatch[0].replace(/,/g, '');
             const parts = dStr.trim().split(/\s+/);
             if (parts.length >= 3) {
                 const day = parts[0].padStart(2, '0');
                 const monthName = parts[1].slice(0, 3);
-                const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+                let year = parts[2];
+                if (year.length === 2) year = '20' + year;
                 const months = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
                 if (months[monthName]) {
                     txDate = `${year}-${months[monthName]}-${day}`;
@@ -2721,41 +2868,66 @@ function clientParseStatementLines(rawText, defaultMethod = 'Pasted Statement') 
             }
         }
 
-        // Clean and extract transaction name
-        let cleanName = blockText
-            .replace(dateRegex, '')
-            .replace(/UPI payment|UPI receipt|Debit Card|Single Transfer|Online payment|Others/gi, '')
-            .replace(/(?:Services|Food and Drinks|Shopping|Education|Entertainment|Grocery|Digital Payments|Self Transfer|Interests & Dividends|Loan EMI|Travel|Home expenses|Personal Care|Health and Wellness|Donations|Others \(In\)|Others \(Out\))/gi, '')
-            .replace(/(?:[+\-]?\s*(?:₹|Rs\.?|INR|\$)?\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})|\d+(?:\.\d{2}))/gi, '')
-            .replace(/\b\d{10,16}\b/g, '')
-            .replace(/UPI\/[A-Z0-9/._-]+/gi, '')
-            .replace(/[^a-zA-Z0-9\s]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-
-        if (!cleanName || cleanName.length < 2) {
-            cleanName = `Transaction #${idx + 1}`;
+        // AI Matcher
+        let matched = null;
+        for (const rule of CLIENT_MERCHANT_MAP) {
+            if (rule.patterns.some(p => p.test(blockText))) {
+                matched = rule;
+                break;
+            }
         }
 
-        let cat = isCredit ? 'Income' : 'Shopping';
-        if (/zomato|swiggy|dominos|meenu|dining|food|cafe|restaurant/i.test(cleanName)) cat = 'Dining Out';
-        else if (/instamart|zepto|grocery|vijay kumar|market/i.test(cleanName)) cat = 'Groceries';
-        else if (/spotify|youtube|google play|apple|netflix/i.test(cleanName)) cat = 'Software/Subscriptions';
-        else if (/edutech|engineering|education|school|college|institute/i.test(cleanName)) cat = 'Education';
-        else if (/blue dart|courier|logistics|express/i.test(cleanName)) cat = 'Services';
-        else if (/slice|lazypay|snapmint|emi|repay/i.test(cleanName)) cat = 'EMIs & Repayments';
+        // Person Matcher
+        let personName = '';
+        const upiPersonMatch = blockText.match(/(?:armaan|vivek|ashish|keshav|meenu|ananya|shakshi|partho|dheeraj|varinder|bhanu|jaydeb|harsh)\s*[a-zA-Z]*/i);
+        if (upiPersonMatch) personName = upiPersonMatch[0].trim();
 
-        const isIncome = isCredit || (!isDebit && /deposit|credit|received/i.test(blockText));
+        let merchant = matched ? matched.merchant : '';
+        let category = matched ? matched.cat : (isIncome ? 'Income' : 'Shopping');
+        let memoryTag = matched ? matched.memory : (isIncome ? '💸 Inbound Funds' : '✨ Financial Life');
+        let icon = matched ? matched.icon : (isIncome ? 'bi-arrow-down-left-circle-fill' : 'bi-credit-card-fill');
+        let desc = '';
+
+        if (isIncome) {
+            merchant = personName || merchant || 'Inbound Transfer';
+            category = 'Digital Payments';
+            desc = personName ? `UPI Transfer received from ${personName}` : (matched ? matched.desc : 'Inbound credit payment');
+            memoryTag = personName ? '💸 Friends & Settlements' : '💸 Capital Inflow';
+        } else if (matched) {
+            desc = matched.desc;
+        } else if (personName) {
+            merchant = personName;
+            category = 'Digital Payments';
+            desc = `UPI Payment sent to ${personName}`;
+            memoryTag = '💸 Friends & Transfers';
+        } else {
+            let clean = blockText
+                .replace(/UPI payment|UPI receipt|Debit Card|Single Transfer|Online payment|Others/gi, '')
+                .replace(/Aug \d{4}|Jul \d{4}|Jun \d{4}|May \d{4}|\d{2}\s+[A-Za-z]{3}\s+\d{2,4}/gi, '')
+                .replace(/(?:Services|Food and Drinks|Shopping|Education|Entertainment|Grocery|Digital Payments|Self Transfer|Interests & Dividends|Loan EMI|Travel|Home expenses)/gi, '')
+                .replace(/(?:[+\-]?\s*(?:₹|Rs\.?|INR|\$)?\s*\d{1,3}(?:,\d{3})*(?:\.\d{2})|\d+(?:\.\d{2}))/gi, '')
+                .replace(/\b\d{10,16}\b/g, '')
+                .replace(/UPI\/[A-Z0-9/._-]+/gi, '')
+                .replace(/[^a-zA-Z0-9\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            merchant = clean.length > 2 ? clean.slice(0, 35) : `Transaction #${idx + 1}`;
+            desc = `Purchase with ${merchant}`;
+        }
 
         parsed.push({
             id: 't_imp_' + Date.now() + '_' + idx,
-            desc: cleanName,
+            desc: merchant,
+            cleanDesc: desc,
             amount: txAmount,
             type: isIncome ? 'income' : 'expense',
-            category: cat,
+            category: category,
+            memoryTag: memoryTag,
+            icon: icon,
             method: isIncome ? 'UPI Receipt' : (defaultMethod || 'UPI Payment'),
             date: txDate,
-            contextPath: [cleanName, cat, isIncome ? 'Income' : 'IDFC First Bank'],
+            contextPath: [merchant, category, memoryTag],
             source: 'import'
         });
     });
@@ -2776,98 +2948,59 @@ function StatementImportModal({ onClose }) {
     const [msg, setMsg] = useState('');
     const fileInputRef = useRef(null);
 
-    const handleFileUpload = async (fileToUpload) => {
-        const file = fileToUpload || selectedFile;
-        if (!file) return;
-        setLoading(true); setMsg('Uploading & parsing PDF statement with AI engine...');
+    const handleImportText = async (e) => {
+        if (e) e.preventDefault();
+        setLoading(true); setMsg('');
 
         try {
-            if (state.token && state.token !== 'offline_token') {
-                try {
-                    const formData = new FormData();
-                    formData.append('file', file);
-
-                    const res = await fetch(`${state.apiUrl}/api/import/statement-file`, {
-                        method: 'POST',
-                        headers: { 'x-auth-token': state.token },
-                        body: formData
-                    });
-                    const data = await res.json();
-                    if (res.ok && data.transactions && data.transactions.length > 0) {
-                        setMsg(data.message);
-                        data.transactions.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
-                        setLoading(false);
-                        return;
-                    }
-                } catch (netErr) {
-                    console.warn('Backend file import unreachable, using client reader:', netErr);
-                }
+            let parsed = [];
+            if (importMode === 'file' && selectedFile) {
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    const text = ev.target.result;
+                    parsed = clientParseStatementLines(text, 'PDF Bank Statement');
+                    saveAndApplyParsed(parsed, selectedFile.name);
+                };
+                reader.readAsText(selectedFile);
+                return;
+            } else {
+                if (!rawText) return setLoading(false);
+                parsed = clientParseStatementLines(rawText, format || 'Pasted Statement');
+                saveAndApplyParsed(parsed, 'Pasted Statement');
             }
-
-            // Client-side text/CSV reader fallback
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const text = e.target.result;
-                const parsed = clientParseStatementLines(text, 'PDF Bank Statement');
-                if (parsed.length > 0) {
-                    parsed.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
-                    setMsg(`Extracted & imported ${parsed.length} transactions from ${file.name}!`);
-                } else {
-                    setMsg(`Read file ${file.name}, but could not find clear amount fields.`);
-                }
-                setLoading(false);
-            };
-            reader.readAsText(file);
         } catch (err) {
-            setMsg('Error reading statement file: ' + err.message);
+            setMsg('Error parsing statement: ' + err.message);
             setLoading(false);
         }
     };
 
-    const handleImportText = async (e) => {
-        e.preventDefault();
-        if (importMode === 'file' && selectedFile) {
-            return handleFileUpload(selectedFile);
-        }
-        if (!rawText) return;
-        setLoading(true); setMsg('');
-
-        try {
-            if (state.token && state.token !== 'offline_token') {
-                try {
-                    const res = await apiRequest('/api/import/statement', {
-                        method: 'POST',
-                        body: JSON.stringify({ rawText, format })
-                    });
-                    if (res && res.transactions && res.transactions.length > 0) {
-                        setMsg(res.message);
-                        res.transactions.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
-                        setLoading(false);
-                        return;
-                    }
-                } catch (apiErr) {
-                    console.warn('Backend API unreachable, using client statement parser:', apiErr);
-                }
-            }
-
-            // Always fallback to client parser
-            const parsed = clientParseStatementLines(rawText, format || 'Pasted Statement');
-            if (parsed.length > 0) {
-                parsed.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
-                setMsg(`Successfully imported ${parsed.length} statement entries into memory!`);
-            } else {
-                setMsg('Could not find transaction amounts in text.');
-            }
-        } catch (err) {
-            const parsed = clientParseStatementLines(rawText, format || 'Pasted Statement');
-            if (parsed.length > 0) {
-                parsed.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
-                setMsg(`Successfully imported ${parsed.length} statement entries into memory!`);
-            } else {
-                setMsg('Error parsing statement: ' + err.message);
-            }
-        } finally {
+    const saveAndApplyParsed = async (parsed, sourceName) => {
+        if (!parsed || parsed.length === 0) {
+            setMsg('Could not find clear transaction lines or amounts in the input.');
             setLoading(false);
+            return;
+        }
+
+        // Deduplicate against existing transactions
+        const existingKeys = new Set(state.transactions.map(t => `${t.date}_${t.amount.toFixed(2)}_${(t.desc || '').toLowerCase()}`));
+        const uniqueTxs = parsed.filter(t => !existingKeys.has(`${t.date}_${t.amount.toFixed(2)}_${(t.desc || '').toLowerCase()}`));
+
+        if (uniqueTxs.length === 0) {
+            setMsg(`Statement parsed (${parsed.length} entries), all are already present in your ledger.`);
+            setLoading(false);
+            return;
+        }
+
+        // Optimistically add to state immediately
+        uniqueTxs.forEach(t => dispatch({ type: 'ADD_TRANSACTION', payload: t }));
+        setMsg(`✨ Extracted & imported ${uniqueTxs.length} transactions with smart memory chips!`);
+        setLoading(false);
+
+        // Background save to MongoDB Atlas if connected
+        if (state.token && state.token !== 'offline_token') {
+            for (const t of uniqueTxs) {
+                apiRequest('/api/transactions', { method: 'POST', body: JSON.stringify(t) }).catch(err => console.warn('Background save error:', err.message));
+            }
         }
     };
 
