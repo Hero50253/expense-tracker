@@ -26,9 +26,24 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/transactions', auth, async (req, res) => {
     try {
         const transactions = await Transaction.find({ userId: req.user.id }).sort({ date: -1 });
-        res.json(transactions);
+        const sanitized = transactions.map(t => {
+            const cleanTitle = cleanSingleTransactionTitle(t.desc);
+            const numAmount = typeof t.amount === 'number' ? t.amount : (parseFloat(t.amount) || 0);
+
+            // If the document had accumulated junk in MongoDB, trigger background fix
+            if (t.desc !== cleanTitle || typeof t.amount !== 'number') {
+                Transaction.updateOne({ _id: t._id }, { $set: { desc: cleanTitle, amount: numAmount } }).catch(() => {});
+            }
+
+            return {
+                ...t.toObject(),
+                desc: cleanTitle,
+                amount: numAmount
+            };
+        });
+        res.json(sanitized);
     } catch (err) {
-        res.status(500).json({ message: 'Error fetching transactions' });
+        res.status(500).json({ message: 'Error fetching transactions: ' + err.message });
     }
 });
 
@@ -423,6 +438,46 @@ const MERCHANT_INTELLIGENCE_MAP = [
     { patterns: [/keychron|macbook|dell|lenovo|keyboard|monitor|gpu/i], merchant: 'Tech Hardware Studio', cat: 'Electronics', desc: 'Developer workstation hardware upgrade', memory: '🖥 Developer Setup', icon: 'bi-laptop-fill' }
 ];
 
+// Helper: Clean title and prevent string accumulator leaks
+function cleanSingleTransactionTitle(rawStr) {
+    if (!rawStr) return 'Verified Transaction';
+    let s = String(rawStr).trim();
+
+    // If string has multiple concatenated segments like "Aug 2026 payment ... Aug 2026 receipt ..."
+    const segRegex = /(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*|\d{1,2}\s+[A-Za-z]{3}|\d{4}[-/]\d{2}[-/]\d{2})\s+\d{2,4}?\s*(?:payment|receipt)?/gi;
+    const segs = [...s.matchAll(segRegex)];
+    if (segs.length > 1) {
+        const firstStart = segs[0].index + segs[0][0].length;
+        const firstEnd = segs[1].index;
+        s = s.slice(firstStart, firstEnd).trim();
+    } else if (segs.length === 1 && segs[0].index === 0) {
+        s = s.slice(segs[0][0].length).trim();
+    }
+
+    // Match known merchants
+    for (const rule of MERCHANT_INTELLIGENCE_MAP) {
+        if (rule.patterns.some(p => p.test(s))) {
+            return rule.merchant;
+        }
+    }
+
+    // Match people names
+    const personMatch = s.match(/(?:Vivek\s*Anand|Armaan\s*S\/I|Meenu\s*Bhandari|Sarah\s*Chen|Alex\s*Miller|Liam\s*Patel|Vijay\s*Kumar|Shalini|Harvinder|Anju\s*Poo|Amritansh\s*Anand)/i);
+    if (personMatch) return personMatch[0].trim();
+
+    // Clean OCR tokens and method names
+    s = s
+        .replace(/UPI payment|UPI receipt|Debit Card|Single Transfer|Online payment|Digital Payments|Digital Payment/gi, '')
+        .replace(/(?:Services|Food and Drinks|Shopping|Education|Entertainment|Grocery|Self Transfer|Interests & Dividends|Loan EMI|Travel|Home expenses)/gi, '')
+        .replace(/\b\d{10,16}\b/g, '')
+        .replace(/UPI\/[A-Z0-9/._-]+/gi, '')
+        .replace(/[^a-zA-Z0-9\s&/.-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    return s.length > 1 ? s : 'Verified Merchant';
+}
+
 function analyzeTransactionIntelligence(rawString, amount, isCredit, txDate) {
     let matched = null;
     for (const rule of MERCHANT_INTELLIGENCE_MAP) {
@@ -434,9 +489,14 @@ function analyzeTransactionIntelligence(rawString, amount, isCredit, txDate) {
 
     // Extract person name if UPI transfer
     let personName = '';
-    const upiPersonMatch = rawString.match(/(?:armaan|vivek|ashish|keshav|meenu|ananya|shakshi|partho|dheeraj|varinder|bhanu|jaydeb|harsh)\s*[a-zA-Z]*/i);
+    const upiPersonMatch = rawString.match(/(?:armaan|vivek|ashish|keshav|meenu|ananya|shakshi|partho|dheeraj|varinder|bhanu|jaydeb|harsh|shalini|harvin|anju\s*poo|amritansh)\s*[a-zA-Z]*/i);
     if (upiPersonMatch) {
         personName = upiPersonMatch[0].trim();
+        if (/anju\s*poo/i.test(personName)) personName = 'Anju Poo';
+        if (/harvin/i.test(personName)) personName = 'Harvinder';
+        if (/shalini/i.test(personName)) personName = 'Shalini';
+        if (/vivek/i.test(personName)) personName = 'Vivek Anand';
+        if (/armaan/i.test(personName)) personName = 'Armaan S/I';
     }
 
     let merchant = matched ? matched.merchant : '';
@@ -484,86 +544,81 @@ function analyzeTransactionIntelligence(rawString, amount, isCredit, txDate) {
     };
 }
 
-// --- Helper: Ultra-Flexible Bank Statement & Table Parser ---
+// --- Helper: Ultra-Flexible Stateless Bank Statement & Table Parser ---
 function parseStatementLines(rawText, defaultMethod = 'IDFC First Bank') {
-    const dateRegex = /\b(\d{2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*,?\s+\d{2,4}|\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4})\b/gi;
+    if (!rawText || typeof rawText !== 'string') return [];
 
-    // Pre-process: insert newlines before every Date stamp so multiline table text doesn't merge dates onto amount lines
-    let formattedText = rawText.replace(dateRegex, '\n$1');
-    const rawLines = formattedText.split('\n').map(l => l.trim()).filter(Boolean);
-    const parsed = [];
+    let text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-    // Group lines into transaction blocks starting with a Date stamp
-    const blocks = [];
-    let currentBlock = [];
+    // Clean out known statement header/footer lines
+    text = text.replace(/^(?:Date and Time|Value Date|Transaction Details|Ref\/Cheque|Withdrawals|Deposits|Balance|Opening Balance|REGISTERED OFFICE|IDFC FIRST BANK|Page \d+ of \d+|Customer ID|Important message|Security tips).*/gim, '');
 
-    rawLines.forEach(line => {
-        if (/^(Date|Smart Summary|Customer ID|Filter|Accounts|Date Range|Transactions Based|Important message|Security tips|Contact us|Page \d+|--)/i.test(line)) {
-            return;
-        }
+    // Record boundary regex matching transaction start positions
+    const recordBoundaryRegex = /(?:(?:\r?\n|^)\s*(?:\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4}|\d{4}[-/]\d{2}[-/]\d{2}|\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{2,4}|UPI\/(?:DR|CR)\/\d+|(?:\d{2,4}[-/]\d{2}[-/]\d{2,4}\s+payment|\d{2,4}[-/]\d{2}[-/]\d{2,4}\s+receipt)|(?:Aug|Jul|Jun|May|Apr|Mar|Feb|Jan)\s+\d{4}\s+(?:payment|receipt)))/gi;
 
-        const startsWithDate = dateRegex.test(line.slice(0, 30));
-
-        if (startsWithDate && currentBlock.length > 0) {
-            blocks.push(currentBlock.join(' '));
-            currentBlock = [line];
-        } else {
-            currentBlock.push(line);
-        }
-    });
-
-    if (currentBlock.length > 0) {
-        blocks.push(currentBlock.join(' '));
+    const boundaries = [];
+    let match;
+    while ((match = recordBoundaryRegex.exec(text)) !== null) {
+        boundaries.push(match.index);
     }
 
-    blocks.forEach((blockText, idx) => {
-        if (blockText.length < 5) return;
-        if (/^\d{1,3}(?:,\d{3})*(?:\.\d{2})?\s*(?:CR|DR)?$/i.test(blockText.trim())) return;
-
-        const isReceipt = /receipt|\+|\bCR\b|deposited|interest credit/i.test(blockText);
-        const isIncome = isReceipt && !/Debit|withdrawn|UPI payment/i.test(blockText);
-
-        const cleanForAmount = blockText
-            .replace(dateRegex, '')
-            .replace(/\b\d{10,16}\b/g, '')
-            .replace(/\b\d{2}:\d{2}\b/g, '');
-
-        const amountMatches = [...cleanForAmount.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})|\d+(?:\.\d{1,2}))/gi)];
-        let amounts = [];
-
-        for (const m of amountMatches) {
-            const val = parseFloat(m[1].replace(/,/g, ''));
-            if (!isNaN(val) && val > 0 && val < 10000000 && val !== 2024 && val !== 2025 && val !== 2026 && val !== 2027) {
-                amounts.push(val);
-            }
+    let rawBlocks = [];
+    if (boundaries.length >= 2) {
+        for (let i = 0; i < boundaries.length; i++) {
+            const start = boundaries[i];
+            const end = (i + 1 < boundaries.length) ? boundaries[i + 1] : text.length;
+            const block = text.slice(start, end).trim();
+            if (block.length > 3) rawBlocks.push(block);
         }
+    } else {
+        rawBlocks = text.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+    }
 
-        if (amounts.length === 0) {
-            const intMatches = [...cleanForAmount.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?(\d{1,3}(?:,\d{3})*|\d+)/gi)];
-            for (const m of intMatches) {
-                const val = parseFloat(m[1].replace(/,/g, ''));
-                if (!isNaN(val) && val > 0 && val < 5000000 && val !== 2024 && val !== 2025 && val !== 2026 && val !== 2027) {
-                    amounts.push(val);
+    const parsed = [];
+    rawBlocks.forEach((blockText, idx) => {
+        if (!/\d/.test(blockText)) return;
+
+        const isReceipt = /receipt|\+|\bCR\b|deposited|interest credit|received|Refund/i.test(blockText);
+        const isIncome = isReceipt && !/Debit|withdrawn|Sent using Paytm UPI|MandateExecute|payment/i.test(blockText);
+
+        const amtMatches = [...blockText.matchAll(/(?:Rs\.?|INR|₹|\$)?\s?([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?|\d+\.\d{1,2})/gi)];
+        let candidateAmounts = [];
+        for (const m of amtMatches) {
+            const numStr = m[1].replace(/,/g, '');
+            const val = parseFloat(numStr);
+            const hasCurrency = /(?:Rs\.?|INR|₹|\$)/i.test(m[0]);
+            if (!isNaN(val) && val > 0 && val < 50000000) {
+                if (!hasCurrency && (val === 2024 || val === 2025 || val === 2026 || val === 2027)) {
+                    continue;
                 }
+                if (!hasCurrency && val > 1900 && val < 2030 && !numStr.includes('.')) {
+                    continue;
+                }
+                candidateAmounts.push(val);
             }
         }
 
-        if (amounts.length === 0) return;
-        const txAmount = amounts[amounts.length - 1]; // In statements, the last number in the row is the transaction amount
+        if (candidateAmounts.length === 0) return;
+        const txAmount = candidateAmounts[candidateAmounts.length - 1];
 
-        const dateMatch = blockText.match(dateRegex);
+        const dateMatch = blockText.match(/(?:\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4}|\d{4}[-/]\d{2}[-/]\d{2}|\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{2,4})/i);
         let txDate = new Date().toISOString().split('T')[0];
         if (dateMatch) {
-            const dStr = dateMatch[0].replace(/,/g, '');
-            const parts = dStr.trim().split(/\s+/);
+            const dStr = dateMatch[0].replace(/,/g, '').trim();
+            const parts = dStr.split(/[\s\-/]+/);
             if (parts.length >= 3) {
-                const day = parts[0].padStart(2, '0');
-                const monthName = parts[1].slice(0, 3);
-                let year = parts[2];
-                if (year.length === 2) year = '20' + year;
                 const months = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
-                if (months[monthName]) {
-                    txDate = `${year}-${months[monthName]}-${day}`;
+                let day = parts[0];
+                let mon = parts[1].slice(0, 3);
+                let yr = parts[2];
+                if (months[mon]) {
+                    if (yr.length === 2) yr = '20' + yr;
+                    txDate = `${yr}-${months[mon]}-${day.padStart(2, '0')}`;
+                } else if (/^\d{4}$/.test(parts[0])) {
+                    txDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                } else if (/^\d{1,2}$/.test(parts[0]) && /^\d{1,2}$/.test(parts[1])) {
+                    let y = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+                    txDate = `${y}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
                 }
             }
         }
@@ -571,6 +626,7 @@ function parseStatementLines(rawText, defaultMethod = 'IDFC First Bank') {
         const intel = analyzeTransactionIntelligence(blockText, txAmount, isIncome, txDate);
 
         parsed.push({
+            id: 't_imp_' + Date.now() + '_' + idx,
             desc: intel.merchant,
             cleanDesc: intel.desc,
             amount: txAmount,
@@ -578,7 +634,7 @@ function parseStatementLines(rawText, defaultMethod = 'IDFC First Bank') {
             category: intel.category,
             memoryTag: intel.memoryTag,
             icon: intel.icon,
-            method: isIncome ? 'UPI Receipt' : 'UPI Payment',
+            method: isIncome ? 'UPI Receipt' : (defaultMethod || 'UPI Payment'),
             date: txDate,
             contextPath: [intel.merchant, intel.category, intel.memoryTag],
             source: 'import'
