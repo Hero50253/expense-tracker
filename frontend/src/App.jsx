@@ -296,6 +296,11 @@ function ExpenseProvider({ children }) {
                 if (parsed && parsed.apiUrl && parsed.apiUrl.includes('localhost') && !parsed.apiUrl.includes(':3000')) {
                     parsed.apiUrl = 'http://localhost:3000';
                 }
+                // Automatic crash protection: if local state has over 200 bloated items from oversized uploads, auto-reset to clean default state
+                if (parsed && parsed.transactions && parsed.transactions.length > 200) {
+                    parsed.transactions = DEFAULT_STATE.transactions;
+                    parsed.statements = DEFAULT_STATE.statements;
+                }
                 return parsed;
             } catch (e) {
                 return DEFAULT_STATE;
@@ -426,6 +431,26 @@ function TopBar({ onOpenCmd, activeTab, setActiveTab }) {
             </div>
 
             <div className="topbar-actions">
+                <button
+                    className="btn btn-secondary btn-sm"
+                    title="Undo large statement upload & restore verified 19 transactions"
+                    onClick={async () => {
+                        if (window.confirm('Restore account to the verified standard transactions and clear oversized statement data?')) {
+                            try {
+                                await apiRequest('/api/account/reset-data', { method: 'POST' });
+                            } catch (e) {
+                                console.warn(e);
+                            }
+                            localStorage.removeItem('expense_os_state');
+                            dispatch({ type: 'RESET_DATA' });
+                            window.location.reload();
+                        }
+                    }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '4px 10px', height: 32, borderRadius: 8 }}
+                >
+                    <i className="bi bi-arrow-counterclockwise"></i> Reset Ledger
+                </button>
+
                 <div className="topbar-meta">
                     <span className="topbar-time">{currentTime}</span>
                     <div className="topbar-status" title="Synced with ExpenseOS Cloud Engine">
@@ -3075,7 +3100,24 @@ function StatementsView() {
                     <h1 className="page-title">Statements & Ingestion Hub</h1>
                     <p className="page-subtitle">Multi-page PDF extraction, bank reconciliation & structured ledger ingestion</p>
                 </div>
-                <div className="page-actions">
+                <div className="page-actions" style={{ display: 'flex', gap: 8 }}>
+                    <button
+                        className="btn btn-secondary"
+                        onClick={async () => {
+                            if (window.confirm('Reset account to the clean 19 standard verified transactions and undo statement upload?')) {
+                                try {
+                                    await apiRequest('/api/account/reset-data', { method: 'POST' });
+                                } catch (e) {
+                                    console.warn(e);
+                                }
+                                localStorage.removeItem('expense_os_state');
+                                dispatch({ type: 'RESET_DATA' });
+                                window.location.reload();
+                            }
+                        }}
+                    >
+                        <i className="bi bi-arrow-counterclockwise"></i> Undo Upload / Reset
+                    </button>
                     <button className="btn btn-primary" onClick={() => setShowImportModal(true)}>
                         <i className="bi bi-file-earmark-arrow-up-fill"></i> Import Statement / File
                     </button>

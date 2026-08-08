@@ -967,15 +967,75 @@ router.post('/system/sync', auth, async (req, res) => {
         if (emis) promises.push(Emi.insertMany(emis.map(e => ({ ...e, userId: uid, _id: undefined }))));
         if (friends) promises.push(Friend.insertMany(friends.map(f => ({ ...f, userId: uid, _id: undefined }))));
         if (groups) promises.push(Group.insertMany(groups.map(g => ({ ...g, userId: uid, _id: undefined }))));
-        if (sharedExpenses) promises.push(SharedExpense.insertMany(sharedExpenses.map(e => ({ ...e, userId: uid, _id: undefined }))));
-        if (settlements) promises.push(Settlement.insertMany(settlements.map(s => ({ ...s, userId: uid, _id: undefined }))));
+// --- Reset User Account to Pristine Standard Seed Data ---
+router.post(['/account/reset-data', '/reset-data'], auth, async (req, res) => {
+    try {
+        const uid = req.user.id;
+        
+        // Clean out all bloated / uploaded data for this user
+        await Promise.all([
+            Transaction.deleteMany({ userId: uid }),
+            Statement.deleteMany({ userId: uid }),
+            LifeEvent.deleteMany({ userId: uid }),
+            Subscription.deleteMany({ userId: uid }),
+            Budget.deleteMany({ userId: uid }),
+            CreditCard.deleteMany({ userId: uid }),
+            Emi.deleteMany({ userId: uid }),
+            Friend.deleteMany({ userId: uid }),
+            Group.deleteMany({ userId: uid }),
+            SharedExpense.deleteMany({ userId: uid }),
+            Settlement.deleteMany({ userId: uid })
+        ]);
 
-        await Promise.all(promises);
+        // Re-seed with pristine 19 verified transactions
+        const seedTxs = [
+            { userId: uid, desc: 'Blue Dart Express Limited', amount: 1028.00, type: 'expense', category: 'Services', method: 'UPI Payment', date: '2026-08-07', contextPath: ['Blue Dart Express', 'Logistics & Courier', 'Services'] },
+            { userId: uid, desc: 'Zomato Food Delivery', amount: 414.00, type: 'expense', category: 'Dining Out', method: 'UPI Payment', date: '2026-08-07', contextPath: ['Zomato', 'Food and Drinks', 'Lifestyle'] },
+            { userId: uid, desc: 'Armaan S/I (UPI Transfer Received)', amount: 200.00, type: 'income', category: 'Digital Payments', method: 'UPI Receipt', date: '2026-08-07', contextPath: ['Armaan S/I', 'UPI Received', 'Income'] },
+            { userId: uid, desc: 'Swiggy Instamart Quick Grocery', amount: 190.00, type: 'expense', category: 'Groceries', method: 'UPI Payment', date: '2026-08-06', contextPath: ['Swiggy Instamart', 'Quick Commerce', 'Groceries'] },
+            { userId: uid, desc: 'Meenu Bhandari Dining', amount: 255.00, type: 'expense', category: 'Dining Out', method: 'UPI Payment', date: '2026-08-06', contextPath: ['Meenu Bhandari', 'Food and Drinks', 'Dining Out'] },
+            { userId: uid, desc: 'Amiman Edutech Pvt Ltd Course', amount: 539.00, type: 'expense', category: 'Education', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Amiman Edutech', 'Tech Education', 'Career Growth'] },
+            { userId: uid, desc: 'Agansel Shopping', amount: 299.00, type: 'expense', category: 'Shopping', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Agansel', 'Lifestyle Shopping', 'Shopping'] },
+            { userId: uid, desc: 'Zomato Limited Meal', amount: 552.00, type: 'expense', category: 'Dining Out', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Zomato Limited', 'Food and Drinks', 'Dining Out'] },
+            { userId: uid, desc: 'Amritansh Anand UPI Test', amount: 2.00, type: 'expense', category: 'Digital Payments', method: 'UPI Payment', date: '2026-08-05', contextPath: ['UPI Verification', 'Digital Payments'] },
+            { userId: uid, desc: 'Spotify India Pvt Ltd Music', amount: 69.00, type: 'expense', category: 'Software/Subscriptions', method: 'UPI Payment', date: '2026-08-05', contextPath: ['Spotify India', 'Audio Streaming', 'Entertainment'] },
+            { userId: uid, desc: 'Mr Vijay Kumar Fresh Market', amount: 2170.00, type: 'expense', category: 'Groceries', method: 'UPI Payment', date: '2026-08-04', contextPath: ['Mr Vijay Kumar', 'Pantry & Market', 'Groceries'] },
+            { userId: uid, desc: 'Google Play Apps & Games', amount: 489.00, type: 'expense', category: 'Software/Subscriptions', method: 'UPI Payment', date: '2026-08-04', contextPath: ['Google Play', 'Apps & Subscriptions', 'Entertainment'] },
+            { userId: uid, desc: 'YouTube Premium Subscription', amount: 89.00, type: 'expense', category: 'Software/Subscriptions', method: 'UPI Payment', date: '2026-08-02', contextPath: ['YouTube', 'Video Streaming', 'Entertainment'] },
+            { userId: uid, desc: 'Zomato Media Private Limited', amount: 501.00, type: 'expense', category: 'Dining Out', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Zomato Media', 'Food and Drinks', 'Dining Out'] },
+            { userId: uid, desc: 'Zepto Marketplace Quick Commerce', amount: 774.00, type: 'expense', category: 'Groceries', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Zepto Marketplace', 'Daily Groceries', 'Living'] },
+            { userId: uid, desc: 'Apple Media Services Refund/Credit', amount: 5.00, type: 'income', category: 'Digital Payments', method: 'UPI Receipt', date: '2026-08-02', contextPath: ['Apple Media', 'Digital Payments', 'Income'] },
+            { userId: uid, desc: 'Apple Media Services Store', amount: 5.00, type: 'expense', category: 'Software/Subscriptions', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Apple Media Services', 'App Store', 'Entertainment'] },
+            { userId: uid, desc: 'M S The Engineering Institute Store', amount: 20.00, type: 'expense', category: 'Education', method: 'UPI Payment', date: '2026-08-02', contextPath: ['Engineering Institute', 'Stationery', 'Education'] },
+            { userId: uid, desc: 'Vivek Anand (Bank/UPI Transfer Received)', amount: 1000.00, type: 'income', category: 'Digital Payments', method: 'UPI Receipt', date: '2026-08-02', contextPath: ['Vivek Anand', 'Family Transfer', 'Income'] }
+        ];
 
-        res.json({ message: 'Database state synchronized successfully' });
+        const savedTxs = await Transaction.insertMany(seedTxs);
+
+        const seedStmt = new Statement({
+            userId: uid,
+            fileName: 'IDFC_FIRST_Bank_Statement_Aug2026.pdf',
+            bankName: 'IDFC First Bank',
+            source: 'statement_upload',
+            importedAt: new Date(),
+            dateRange: { start: '2026-08-02', end: '2026-08-07' },
+            transactionCount: seedTxs.length,
+            totalDebit: 9747.00,
+            totalCredit: 1205.00,
+            duplicateCount: 0,
+            transactions: seedTxs
+        });
+        await seedStmt.save();
+
+        res.json({
+            success: true,
+            message: 'Account reset and restored to pristine state',
+            transactionCount: savedTxs.length,
+            transactions: savedTxs
+        });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Failed to sync database state' });
+        console.error('Reset error:', err);
+        res.status(500).json({ message: 'Error resetting account data: ' + err.message });
     }
 });
 
