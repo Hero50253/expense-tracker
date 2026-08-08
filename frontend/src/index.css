@@ -1210,6 +1210,7 @@ select.form-control { cursor: pointer; }
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
+  min-width: 0;
 }
 
 .tx-merchant {
@@ -1220,6 +1221,8 @@ select.form-control { cursor: pointer; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+  flex: 1;
 }
 
 .tx-clean-desc {
@@ -1229,6 +1232,8 @@ select.form-control { cursor: pointer; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .tx-meta-row {

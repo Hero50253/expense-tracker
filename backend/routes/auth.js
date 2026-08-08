@@ -56,6 +56,12 @@ router.post('/signup', async (req, res) => {
         const { Transaction } = require('../models/Finance');
         await Transaction.insertMany(seedTxs).catch(e => console.warn('Seed error:', e.message));
 
+        if (!process.env.JWT_SECRET) {
+            console.error('FATAL: JWT_SECRET environment variable is missing.');
+            return res.status(500).json({ message: 'Server configuration error: JWT_SECRET missing' });
+        }
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+
         res.status(201).json({
             token,
             user: {
@@ -114,7 +120,11 @@ router.post('/login', async (req, res) => {
                 { userId: user._id, desc: 'Vivek Anand (Bank/UPI Transfer Received)', amount: 1000.00, type: 'income', category: 'Digital Payments', method: 'UPI Receipt', date: '2026-08-02', contextPath: ['Vivek Anand', 'Family Transfer', 'Income'] }
             ];
             await Transaction.insertMany(seedTxs).catch(e => console.warn('Login seed error:', e.message));
+        if (!process.env.JWT_SECRET) {
+            console.error('FATAL: JWT_SECRET environment variable is missing.');
+            return res.status(500).json({ message: 'Server configuration error: JWT_SECRET missing' });
         }
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
         res.json({
             token,

@@ -2827,7 +2827,8 @@ function cleanSingleTransactionTitle(rawStr) {
     if (!rawStr) return 'Verified Transaction';
     let s = String(rawStr).trim();
 
-    const segRegex = /(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*|\d{1,2}\s+[A-Za-z]{3}|\d{4}[-/]\d{2}[-/]\d{2})\s+\d{2,4}?\s*(?:payment|receipt)?/gi;
+    // Match year greedily with full 4 or 2 digits
+    const segRegex = /(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*|\d{1,2}\s+[A-Za-z]{3}|\d{4}[-/]\d{2}[-/]\d{2})\s+(?:\d{4}|\d{2})\b\s*(?:payment|receipt)?/gi;
     const segs = [...s.matchAll(segRegex)];
     if (segs.length > 1) {
         const firstStart = segs[0].index + segs[0][0].length;
@@ -2864,12 +2865,15 @@ function clientParseStatementLines(rawText, defaultMethod = 'IDFC First Bank') {
     let text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     text = text.replace(/^(?:Date and Time|Value Date|Transaction Details|Ref\/Cheque|Withdrawals|Deposits|Balance|Opening Balance|REGISTERED OFFICE|IDFC FIRST BANK|Page \d+ of \d+|Customer ID|Important message|Security tips).*/gim, '');
 
-    const recordBoundaryRegex = /(?:(?:\r?\n|^)\s*(?:\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4}|\d{4}[-/]\d{2}[-/]\d{2}|\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{2,4}|UPI\/(?:DR|CR)\/\d+|(?:\d{2,4}[-/]\d{2}[-/]\d{2,4}\s+payment|\d{2,4}[-/]\d{2}[-/]\d{2,4}\s+receipt)|(?:Aug|Jul|Jun|May|Apr|Mar|Feb|Jan)\s+\d{4}\s+(?:payment|receipt)))/gi;
+    // Record boundary regex matching transaction start positions anywhere in string
+    const recordBoundaryRegex = /(?:\d{1,2}[\s\-/]+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[\s\-/]+(?:\d{4}|\d{2})\b|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(?:\d{4}|\d{2})\b\s*(?:payment|receipt)?|\d{4}[-/]\d{2}[-/]\d{2}|\d{1,2}[-/]\d{1,2}[-/](?:\d{4}|\d{2})\b|UPI\/(?:DR|CR)\/\d+)/gi;
 
     const boundaries = [];
     let match;
     while ((match = recordBoundaryRegex.exec(text)) !== null) {
-        boundaries.push(match.index);
+        if (boundaries.length === 0 || match.index - boundaries[boundaries.length - 1] > 6) {
+            boundaries.push(match.index);
+        }
     }
 
     let rawBlocks = [];

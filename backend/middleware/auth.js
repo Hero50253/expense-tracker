@@ -1,6 +1,11 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = function(req, res, next) {
+    if (!process.env.JWT_SECRET) {
+        console.error('FATAL: JWT_SECRET environment variable is missing.');
+        return res.status(500).json({ message: 'Server configuration error: JWT_SECRET missing' });
+    }
+
     // Get token from header
     const authHeader = req.header('Authorization');
     
@@ -13,7 +18,7 @@ module.exports = function(req, res, next) {
 
     try {
         // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_jwt_hash_key_change_in_production');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
         next();
     } catch (err) {

@@ -83,8 +83,8 @@ expense-tracker/
    Ensure `.env` contains:
    ```env
    PORT=3000
-   MONGODB_URI=mongodb+srv://expenseos:NmFn3VyDZtikzdjG@cluster0.durptkd.mongodb.net/?appName=Cluster0
-   JWT_SECRET=super_secret_jwt_hash_key_change_in_production
+   MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/expense_os?retryWrites=true&w=majority
+   JWT_SECRET=your_production_jwt_secret_key_here
    NODE_ENV=development
    CLIENT_ORIGIN=http://localhost:5173,http://127.0.0.1:5173
    ```
