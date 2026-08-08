@@ -134,6 +134,34 @@ module.exports = {
     CreditCard: mongoose.model('CreditCard', CreditCardSchema),
     Emi: mongoose.model('Emi', EmiSchema),
     Friend: mongoose.model('Friend', FriendSchema),
+// --- Statement Batch Ingestion Model ---
+const StatementSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    fileName: { type: String, required: true },
+    bankName: { type: String, default: 'IDFC First Bank' },
+    source: { type: String, default: 'statement_upload' },
+    importedAt: { type: Date, default: Date.now },
+    dateRange: {
+        start: { type: String, default: '' },
+        end: { type: String, default: '' }
+    },
+    transactionCount: { type: Number, default: 0 },
+    totalDebit: { type: Number, default: 0 },
+    totalCredit: { type: Number, default: 0 },
+    duplicateCount: { type: Number, default: 0 },
+    transactions: [{ type: mongoose.Schema.Types.Mixed }]
+});
+
+module.exports = {
+    Transaction: mongoose.model('Transaction', TransactionSchema),
+    Statement: mongoose.model('Statement', StatementSchema),
+    LifeEvent: mongoose.model('LifeEvent', LifeEventSchema),
+    Subscription: mongoose.model('Subscription', SubscriptionSchema),
+    Merchant: mongoose.model('Merchant', MerchantSchema),
+    Budget: mongoose.model('Budget', BudgetSchema),
+    CreditCard: mongoose.model('CreditCard', CreditCardSchema),
+    Emi: mongoose.model('Emi', EmiSchema),
+    Friend: mongoose.model('Friend', FriendSchema),
     Group: mongoose.model('Group', GroupSchema),
     SharedExpense: mongoose.model('SharedExpense', SharedExpenseSchema),
     Settlement: mongoose.model('Settlement', SettlementSchema)

@@ -588,17 +588,155 @@ function parseStatementLines(rawText, defaultMethod = 'IDFC First Bank') {
     return parsed;
 }
 
+// --- Statements Management Endpoints ---
+router.get('/statements', auth, async (req, res) => {
+    try {
+        const { Statement } = require('../models/Finance');
+        const statements = await Statement.find({ userId: req.user.id }).sort({ importedAt: -1 });
+        res.json(statements);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching statements: ' + err.message });
+    }
+});
+
+router.delete('/statements/:id', auth, async (req, res) => {
+    try {
+        const { Statement } = require('../models/Finance');
+        await Statement.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+        res.json({ message: 'Statement record deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error deleting statement: ' + err.message });
+    }
+});
+
+// --- Smart Statement Import Engine with Deduplication & Statement Tracking ---
+router.post('/import/statement-smart', auth, async (req, res) => {
+    try {
+        const { rawText, fileName, format, transactions: providedTxs, source } = req.body;
+        const { Statement } = require('../models/Finance');
+
+        let candidateTxs = [];
+        if (Array.isArray(providedTxs) && providedTxs.length > 0) {
+            candidateTxs = providedTxs;
+        } else if (rawText && rawText.trim().length > 0) {
+            candidateTxs = parseStatementLines(rawText, format || 'IDFC First Bank');
+        } else {
+            return res.status(400).json({ message: 'No statement text or transactions provided' });
+        }
+
+        if (candidateTxs.length === 0) {
+            return res.status(400).json({ message: 'No valid transaction records detected in the statement.' });
+        }
+
+        // Deduplication against existing user transactions
+        const existingUserTxs = await Transaction.find({ userId: req.user.id });
+        const existingFingerprints = new Set(
+            existingUserTxs.map(t => `${t.date}_${t.amount.toFixed(2)}_${(t.desc || '').toLowerCase().trim()}`)
+        );
+
+        const uniqueTxs = [];
+        let duplicateCount = 0;
+
+        for (const t of candidateTxs) {
+            const fp = `${t.date}_${t.amount.toFixed(2)}_${(t.desc || '').toLowerCase().trim()}`;
+            if (!existingFingerprints.has(fp)) {
+                existingFingerprints.add(fp);
+                uniqueTxs.push({
+                    ...t,
+                    userId: req.user.id,
+                    _id: undefined
+                });
+            } else {
+                duplicateCount++;
+            }
+        }
+
+        let savedTxs = [];
+        if (uniqueTxs.length > 0) {
+            savedTxs = await Transaction.insertMany(uniqueTxs);
+        }
+
+        const totalDebit = candidateTxs.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+        const totalCredit = candidateTxs.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+        const dates = candidateTxs.map(t => t.date).filter(Boolean).sort();
+
+        const newStatement = new Statement({
+            userId: req.user.id,
+            fileName: fileName || `Statement_${new Date().toISOString().slice(0, 10)}`,
+            bankName: format || 'IDFC First Bank',
+            source: source || 'statement_upload',
+            importedAt: new Date(),
+            dateRange: {
+                start: dates[0] || '',
+                end: dates[dates.length - 1] || ''
+            },
+            transactionCount: candidateTxs.length,
+            totalDebit,
+            totalCredit,
+            duplicateCount,
+            transactions: candidateTxs
+        });
+
+        await newStatement.save();
+
+        res.json({
+            message: `Successfully ingested statement: ${savedTxs.length} new transactions added (${duplicateCount} duplicates filtered).`,
+            statement: newStatement,
+            insertedCount: savedTxs.length,
+            duplicateCount,
+            transactions: savedTxs
+        });
+    } catch (err) {
+        console.error('Smart statement import error:', err);
+        res.status(500).json({ message: 'Failed to ingest statement: ' + err.message });
+    }
+});
+
 // --- Statement Import Engine (Text) ---
 router.post('/import/statement', auth, async (req, res) => {
     try {
-        const { rawText, format } = req.body;
+        const { rawText, format, fileName } = req.body;
         if (!rawText) return res.status(400).json({ message: 'No statement text provided' });
 
-        const parsed = parseStatementLines(rawText, format || 'Pasted Statement');
+        const parsed = parseStatementLines(rawText, format || 'IDFC First Bank');
 
         if (parsed.length > 0) {
-            const savedTx = await Transaction.insertMany(parsed.map(p => ({ ...p, userId: req.user.id })));
-            res.json({ message: `Successfully imported ${savedTx.length} transactions!`, transactions: savedTx });
+            const existingUserTxs = await Transaction.find({ userId: req.user.id });
+            const existingFingerprints = new Set(
+                existingUserTxs.map(t => `${t.date}_${t.amount.toFixed(2)}_${(t.desc || '').toLowerCase().trim()}`)
+            );
+
+            const uniqueTxs = parsed.filter(t => !existingFingerprints.has(`${t.date}_${t.amount.toFixed(2)}_${(t.desc || '').toLowerCase().trim()}`));
+            let savedTx = [];
+            if (uniqueTxs.length > 0) {
+                savedTx = await Transaction.insertMany(uniqueTxs.map(p => ({ ...p, userId: req.user.id })));
+            }
+
+            const { Statement } = require('../models/Finance');
+            const totalDebit = parsed.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+            const totalCredit = parsed.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+            const dates = parsed.map(t => t.date).filter(Boolean).sort();
+
+            const newStatement = new Statement({
+                userId: req.user.id,
+                fileName: fileName || `Statement_${new Date().toISOString().slice(0, 10)}`,
+                bankName: format || 'IDFC First Bank',
+                source: 'text_paste',
+                importedAt: new Date(),
+                dateRange: { start: dates[0] || '', end: dates[dates.length - 1] || '' },
+                transactionCount: parsed.length,
+                totalDebit,
+                totalCredit,
+                duplicateCount: parsed.length - uniqueTxs.length,
+                transactions: parsed
+            });
+            await newStatement.save().catch(e => console.warn(e));
+
+            res.json({
+                message: `Successfully imported ${savedTx.length} new transactions (${parsed.length - uniqueTxs.length} duplicates skipped)!`,
+                transactions: savedTx,
+                statement: newStatement
+            });
         } else {
             res.status(400).json({ message: 'No valid transaction amounts found in the provided text.' });
         }
@@ -636,8 +774,42 @@ router.post('/import/statement-file', auth, upload.single('file'), async (req, r
         const parsed = parseStatementLines(rawText, 'PDF Bank Statement');
 
         if (parsed.length > 0) {
-            const savedTx = await Transaction.insertMany(parsed.map(p => ({ ...p, userId: req.user.id })));
-            res.json({ message: `Successfully extracted & imported ${savedTx.length} transactions from PDF!`, transactions: savedTx });
+            const existingUserTxs = await Transaction.find({ userId: req.user.id });
+            const existingFingerprints = new Set(
+                existingUserTxs.map(t => `${t.date}_${t.amount.toFixed(2)}_${(t.desc || '').toLowerCase().trim()}`)
+            );
+
+            const uniqueTxs = parsed.filter(t => !existingFingerprints.has(`${t.date}_${t.amount.toFixed(2)}_${(t.desc || '').toLowerCase().trim()}`));
+            let savedTx = [];
+            if (uniqueTxs.length > 0) {
+                savedTx = await Transaction.insertMany(uniqueTxs.map(p => ({ ...p, userId: req.user.id })));
+            }
+
+            const { Statement } = require('../models/Finance');
+            const totalDebit = parsed.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+            const totalCredit = parsed.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+            const dates = parsed.map(t => t.date).filter(Boolean).sort();
+
+            const newStatement = new Statement({
+                userId: req.user.id,
+                fileName: req.file.originalname,
+                bankName: 'IDFC First Bank',
+                source: 'pdf_upload',
+                importedAt: new Date(),
+                dateRange: { start: dates[0] || '', end: dates[dates.length - 1] || '' },
+                transactionCount: parsed.length,
+                totalDebit,
+                totalCredit,
+                duplicateCount: parsed.length - uniqueTxs.length,
+                transactions: parsed
+            });
+            await newStatement.save().catch(e => console.warn(e));
+
+            res.json({
+                message: `Successfully extracted & imported ${savedTx.length} transactions from PDF (${parsed.length - uniqueTxs.length} duplicates skipped)!`,
+                transactions: savedTx,
+                statement: newStatement
+            });
         } else {
             res.status(400).json({ message: 'Could not find clear transaction amounts in PDF. Please verify PDF is not password protected.' });
         }
